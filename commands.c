@@ -71,7 +71,42 @@ int ExeCmd(job_node* jobs, char* lineSize, char* cmdString)
 /*************************************************/
 	if (!strcmp(cmd, "cd") ) 
 	{
-		
+		if (num_arg == 1)
+		{
+			if (args[1] == NULL)
+			{
+				printf("smash error:> path not found\n");
+				return 1;
+			}
+			char *currLocation;
+			currLocation = getcwd(currLocation, sizeof(*currLocation));
+			if (args[1] == '-')
+			{// move to last location
+				int lastLocationflag = chdir(lastLocation);
+				if (lastLocationflag)
+				{
+					printf("smash error:> path not found\n");
+					return 1;
+				}
+				char *strcpy(char lastLocation, const char currLocation);
+				return 0;
+			}
+			else {
+				//move to new location
+				int anotherLocation = chdir(args[1]);
+				if (anotherLocation != 0) {
+					printf("smash error:> %s path not found\n", args[1]);
+					return 1;
+				}
+				char *strcpy(char lastLocation, const char currLocation);
+				return 0;
+			}
+
+
+		}
+		else {
+			illegal_cmd = TRUE;
+		}
 	} 
 	
 	/*************************************************/
