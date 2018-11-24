@@ -17,6 +17,7 @@ typedef struct job_node {
 
 } job_node;
 
+extern int fg_pid;
 extern job_node *jobs;
 
 void handler_cntlc(int);

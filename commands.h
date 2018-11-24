@@ -13,6 +13,7 @@
 #define MAX_LINE_SIZE 80
 #define MAX_ARG 20
 
+extern int fg_pid;
 extern char history[50][MAX_LINE_SIZE];
 extern char *history_start_ptr = history;
 extern char *hisory_end_ptr = history;

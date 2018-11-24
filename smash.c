@@ -15,6 +15,7 @@ main file. This file contains the main function of smash
 
 
 char* L_Fg_Cmd;
+int fg_pid;
 job_node *jobs = NULL; //This represents the list of jobs. Please change to a preferred type (e.g array of char*)
 char lineSize[MAX_LINE_SIZE];
 char history[50][MAX_LINE_SIZE];

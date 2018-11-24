@@ -198,6 +198,7 @@ void ExeExternal(char *args[MAX_ARG],int num_args, char* cmdString)
 				exit(-1);
 			}
 		default:
+			fg_pid = pID;
 			waitpid(pID,&status,WUNTRACED);
 			if(status == WIFSTOPPED){
 				add_to_jobs(pID,cmdString,args,num_args);

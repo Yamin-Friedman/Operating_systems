@@ -3,8 +3,7 @@
 // contains the function/s that set the signal handlers
 
 /*******************************************/
-/* Name: handler_cntlc
-   Synopsis: handle the Control-C */
+
 #include "signals.h"
 
 bool remove_job(int pid){
@@ -26,14 +25,22 @@ bool remove_job(int pid){
 	}
 	return false;
 }
-
+/* Name: handler_cntlc
+   Synopsis: handle the Control-C */
 void handler_cntlc(int sig_num) {
-	printf("Don't do that");
-	fflush(stdout);
+	if(kill(fg_pid,SIGINT) == -1){
+		perror("kill SIGINT:");
+		return;
+	}
+	printf("signal SIGINT was sent to pid %d\n",fg_pid);
 }
 
 void handler_cntlz(int sig_num) {
-
+	if(kill(fg_pid,SIGTSTP) == -1){
+		perror("kill SIGTSTP:");
+		return;
+	}
+	printf("signal SIGTSTP was sent to pid %d\n",fg_pid);
 }
 
 void handler_sigchld(int sig_num){
@@ -43,6 +50,10 @@ void handler_sigchld(int sig_num){
 		child_id = waitpid(curr_node->pid,NULL,WNOHANG);
 		if (child_id == -1) {
 			perror("waitpid:");
+		}
+
+		if(child_id == fg_pid){
+			return;;
 		}
 
 		curr_node = curr_node->next;
