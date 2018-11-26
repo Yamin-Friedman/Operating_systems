@@ -8,6 +8,13 @@ void quit_with_kill(){
 
 void quit_without_kill(){
 	// needs to erase all dynamic memory
+	job_node *curr_node = jobs;
+	job_node *next_node;
+	while(curr_node != NULL){
+		next_node = curr_node->next;
+		free(curr_node);
+		curr_node = next_node;
+	}
 	exit(0);
 }
 
@@ -26,7 +33,7 @@ bool check_valid_num(char *string,int *num){
 	return true;
 }
 
-void add_to_jobs(int pID, char *cmdstring, char *args[MAX_ARG],int num_args){
+void add_to_jobs(int pID, char *cmdstring){
 	struct timespec curr_time;
 	job_node *curr_node = jobs;
 	job_node *new_job_node = (job_node*)malloc(sizeof(job_node));
@@ -38,16 +45,7 @@ void add_to_jobs(int pID, char *cmdstring, char *args[MAX_ARG],int num_args){
 	new_job_node->stopped = true;
 	new_job_node->pid = pID;
 	new_job_node->next = NULL;
-	new_job_node->program = malloc(MAX_LINE_SIZE);
-	if(new_job_node->program == NULL){
-		free(new_job_node);
-		printf("malloc error\n");
-		exit(-1);
-	}
 	strcpy(new_job_node->program,cmdstring);
-	for(int i = 0; i < num_args; i++){
-		strcat(new_job_node->program,args[i]);
-	}
 
 	while(curr_node != NULL){
 		if(curr_node->next == NULL){
@@ -136,11 +134,7 @@ int ExeCmd(job_node* jobs, char* lineSize, char* cmdString)
 	/*************************************************/
 	else if (!strcmp(cmd, "pwd")) 
 	{
-		char *curr_dir = malloc(MAX_LINE_SIZE);
-		if(curr_dir == NULL){
-			printf("Failed Malloc\n");
-			return -1;
-		}
+		char curr_dir[MAX_LINE_SIZE + 1];
 
 		if(getcwd(curr_dir,MAX_LINE_SIZE) == -1){
 			perror("getcwd:");
@@ -287,17 +281,13 @@ int ExeCmd(job_node* jobs, char* lineSize, char* cmdString)
 	/*************************************************/
 	else // external command
 	{
- 		ExeExternal(args, num_arg, cmdString);
+ 		ExeExternal(args, num_arg, cmdString,false);
 	 	return 0;
 	}
     return 0;
 
 	error:
-	printf("smash error: > \"%s", cmdString);
-	for(int i = 1; i <= num_arg; i++){
-		printf(" %s",args[i]);
-	}
-	printf("\"\n");
+	printf("smash error: > \"%s\n", cmdString);
 	return 1;
 }
 //**************************************************************************************
@@ -306,7 +296,7 @@ int ExeCmd(job_node* jobs, char* lineSize, char* cmdString)
 // Parameters: external command arguments, external command string
 // Returns: void
 //**************************************************************************************
-void ExeExternal(char *args[MAX_ARG],int num_args, char* cmdString)
+void ExeExternal(char *args[MAX_ARG],int num_args, char* cmdString,bool background)
 {
 	int pID;
 	int status;
@@ -324,10 +314,15 @@ void ExeExternal(char *args[MAX_ARG],int num_args, char* cmdString)
 				exit(-1);
 			}
 		default:
-			fg_pid = pID;
-			waitpid(pID,&status,WUNTRACED);
-			if(status == WIFSTOPPED){
-				add_to_jobs(pID,cmdString,args,num_args);
+			if(background){
+				add_to_jobs(pID, cmdString);
+			}
+			else {
+				fg_pid = pID;
+				waitpid(pID, &status, WUNTRACED);
+				if (status == WIFSTOPPED) {
+					add_to_jobs(pID, cmdString);
+				}
 			}
 	}
 }
@@ -357,20 +352,30 @@ int ExeComp(char* lineSize)
 // Parameters: command string, pointer to jobs
 // Returns: 0- BG command -1- if not
 //**************************************************************************************
-int BgCmd(char* lineSize, void* jobs)
+int BgCmd(char* lineSize, void* jobs, char *cmdString)
 {
 
-	char* Command;
+	char* cmd;
 	char* delimiters = " \t\n";
 	char *args[MAX_ARG];
+	int i = 0, num_arg = 0;
 	if (lineSize[strlen(lineSize)-2] == '&')
 	{
 		lineSize[strlen(lineSize)-2] = '\0';
-		// Add your code here (execute a in the background)
-					
-		/* 
-		your code
-		*/
+		cmd = strtok(lineSize, delimiters);
+		if (cmd == NULL)
+			return 0;
+		args[0] = cmd;
+		for (i=1; i<MAX_ARG; i++)
+		{
+			args[i] = strtok(NULL, delimiters);
+			if (args[i] != NULL)
+				num_arg++;
+
+		}
+
+		ExeExternal(args, num_arg, cmdString,true);
+		return 0;
 		
 	}
 	return -1;

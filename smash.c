@@ -60,10 +60,10 @@ int main(int argc, char *argv[])
 
 
 	
-	L_Fg_Cmd =(char*)malloc(sizeof(char)*(MAX_LINE_SIZE+1));
-	if (L_Fg_Cmd == NULL) 
-			exit (-1); 
-	L_Fg_Cmd[0] = '\0';
+//	L_Fg_Cmd =(char*)malloc(sizeof(char)*(MAX_LINE_SIZE+1));
+//	if (L_Fg_Cmd == NULL)
+//			exit (-1);
+//	L_Fg_Cmd[0] = '\0';
 	
     	while (1)
     	{
@@ -74,7 +74,7 @@ int main(int argc, char *argv[])
 					// perform a complicated Command
 		if(!ExeComp(lineSize)) continue; 
 					// background command	
-	 	if(!BgCmd(lineSize, jobs)) continue; 
+	 	if(!BgCmd(lineSize, jobs, cmdString)) continue;
 					// built in commands
 		ExeCmd(jobs, lineSize, cmdString);
 		
@@ -82,6 +82,5 @@ int main(int argc, char *argv[])
 		lineSize[0]='\0';
 		cmdString[0]='\0';
 	}
-    return 0;
 }
 

@@ -8,10 +8,13 @@
 #include <string.h>
 #include <stdbool.h>
 
+#define MAX_LINE_SIZE 80
+#define MAX_ARG 20
+
 typedef struct job_node {
 	int pid;
 	time_t start_time;
-	char *program;
+	char program[MAX_LINE_SIZE + 1];
 	bool stopped;
 	struct job_node *next;
 

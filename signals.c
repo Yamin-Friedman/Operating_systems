@@ -32,7 +32,7 @@ void handler_cntlc(int sig_num) {
 		perror("kill SIGINT:");
 		return;
 	}
-	printf("signal SIGINT was sent to pid %d\n",fg_pid);
+	printf("smash > signal SIGINT was sent to pid %d\n",fg_pid);
 }
 
 void handler_cntlz(int sig_num) {
@@ -40,7 +40,7 @@ void handler_cntlz(int sig_num) {
 		perror("kill SIGTSTP:");
 		return;
 	}
-	printf("signal SIGTSTP was sent to pid %d\n",fg_pid);
+	printf("smash > signal SIGTSTP was sent to pid %d\n",fg_pid);
 }
 
 void handler_sigchld(int sig_num){

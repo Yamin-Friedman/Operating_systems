@@ -10,8 +10,6 @@
 #include <sys/wait.h>
 #include "signals.h"
 
-#define MAX_LINE_SIZE 80
-#define MAX_ARG 20
 
 extern int fg_pid;
 extern char history[50][MAX_LINE_SIZE];
@@ -20,9 +18,9 @@ extern char *hisory_end_ptr = history;
 typedef struct job_node job_node;
 typedef enum { FALSE , TRUE } bool;
 int ExeComp(char* lineSize);
-int BgCmd(char* lineSize, void* jobs);
+int BgCmd(char* lineSize, void* jobs, char *cmdString);
 int ExeCmd(job_node* jobs, char* lineSize, char* cmdString);
-void ExeExternal(char *args[MAX_ARG],int num_args, char* cmdString);
+void ExeExternal(char *args[MAX_ARG],int num_args, char* cmdString,bool background);
 char *lastLocation;
 #endif
 
