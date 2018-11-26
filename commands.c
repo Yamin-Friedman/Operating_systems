@@ -2,6 +2,21 @@
 //********************************************
 #include "commands.h"
 
+bool check_valid_num(char *string,int *num){
+	*num = 0;
+	while (string != "\0"){
+		*num *= 10;
+		if(*string >= '0' && *string <= '9'){
+			*num += *string - 48;
+		}
+		else{
+			return false;
+		}
+		string++;
+	}
+	return true;
+}
+
 void add_to_jobs(int pID, char *cmdstring, char *args[MAX_ARG],int num_args){
 	struct timespec curr_time;
 	job_node *curr_node = jobs;
@@ -163,13 +178,17 @@ int ExeCmd(job_node* jobs, char* lineSize, char* cmdString)
 	{
 		int job_num = 0;
 		int curr_job_num = 0;
+		int arg_value;
 		job_node *curr_node = jobs;
 		job_node *next_node;
 		if(num_arg > 1){
-			// print arg error
+			goto error;
 		}
-		else if( num_arg == 1)
-			/* translate option to int job_num = args[1]*/;
+		else if( num_arg == 1) {
+			if (!check_valid_num(args[1], &arg_value)) {
+				goto error;
+			}
+		}
 		while(curr_node != NULL){
 			curr_job_num++;
 			next_node = curr_node->next;
@@ -202,12 +221,15 @@ int ExeCmd(job_node* jobs, char* lineSize, char* cmdString)
  		ExeExternal(args, num_arg, cmdString);
 	 	return 0;
 	}
-	if (illegal_cmd == TRUE)
-	{
-		printf("smash error: > \"%s\"\n", cmdString);
-		return 1;
-	}
     return 0;
+
+	error:
+	printf("smash error: > \"%s", cmdString);
+	for(int i = 1; i <= num_arg; i++){
+		printf(" %s",args[i]);
+	}
+	printf("\"\n");
+	return 1;
 }
 //**************************************************************************************
 // function name: ExeExternal
