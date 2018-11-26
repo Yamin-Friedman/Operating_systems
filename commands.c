@@ -2,6 +2,15 @@
 //********************************************
 #include "commands.h"
 
+void quit_with_kill(){
+
+}
+
+void quit_without_kill(){
+	// needs to erase all dynamic memory
+	exit(0);
+}
+
 bool check_valid_num(char *string,int *num){
 	*num = 0;
 	while (string != "\0"){
@@ -166,7 +175,7 @@ int ExeCmd(job_node* jobs, char* lineSize, char* cmdString)
 	else if (!strcmp(cmd, "showpid")) 
 	{
 		int pid = getpid();
-		printf("smash pid is %d",pid);
+		printf("smash pid is %d\n",pid);
 	}
 	/*************************************************/
 	else if (!strcmp(cmd, "history"))
@@ -178,42 +187,102 @@ int ExeCmd(job_node* jobs, char* lineSize, char* cmdString)
 	{
 		int job_num = 0;
 		int curr_job_num = 0;
-		int arg_value;
+		int status;
 		job_node *curr_node = jobs;
-		job_node *next_node;
+		if(curr_node == NULL){
+			return 0;
+		}
+
 		if(num_arg > 1){
 			goto error;
 		}
 		else if( num_arg == 1) {
-			if (!check_valid_num(args[1], &arg_value)) {
+			if (!check_valid_num(args[1], &job_num)) {
 				goto error;
 			}
 		}
-		while(curr_node != NULL){
+		while(curr_node->next != NULL){
 			curr_job_num++;
-			next_node = curr_node->next;
-			if(job_num && (curr_job_num + 1) == job_num && next_node){
-				curr_node->next = next_node->next;
-				curr_node = next_node;
+			if(job_num && curr_job_num  == job_num){
 				break;
 			}
 
-			if(next_node && next_node->next == NULL);
+			curr_node = curr_node->next;
 		}
 
+		if(curr_node->stopped){
+			curr_node->stopped = false;
+			if(kill(curr_node->pid,SIGCONT) == -1){
+				perror("kill:");
+				return 1;
+			}
+			printf("smash > signal SIGCONT was sent to pid %d\n",curr_node->pid);
+		}
 
-
+		fg_pid = curr_node->pid;
+		waitpid(curr_node->pid,&status,WUNTRACED);
 
 	} 
 	/*************************************************/
 	else if (!strcmp(cmd, "bg")) 
 	{
-  		
+		int job_num = 0;
+		int curr_job_num = 0;
+		int status;
+		job_node *curr_node = jobs;
+		job_node *last_stopped = NULL;
+		if(curr_node == NULL){
+			return 0;
+		}
+
+		if(num_arg > 1){
+			goto error;
+		}
+		else if( num_arg == 1) {
+			if (!check_valid_num(args[1], &job_num)) {
+				goto error;
+			}
+		}
+		while(curr_node->next != NULL){
+			curr_job_num++;
+			if(curr_node->stopped){
+				last_stopped = curr_node;
+			}
+			if(job_num && curr_job_num  == job_num){
+				break;
+			}
+
+			curr_node = curr_node->next;
+		}
+
+		if(!job_num){
+			curr_node = last_stopped;
+			if(last_stopped == NULL){
+				return 0;
+			}
+		}
+		else{
+			if(!curr_node->stopped){
+				return 0;
+			}
+		}
+
+		curr_node->stopped = false;
+		printf("%s\n",curr_node->program);
+		if(kill(curr_node->pid,SIGCONT) == -1){
+			perror("kill:");
+			return 1;
+		}
+		printf("smash > signal SIGCONT was sent to pid %d\n",curr_node->pid);
 	}
 	/*************************************************/
 	else if (!strcmp(cmd, "quit"))
 	{
-   		
+   		if(num_arg == 1 && strcmp(args[1],"kill")){
+		    quit_with_kill();
+	    } else{
+		    quit_without_kill();
+	    }
 	} 
 	/*************************************************/
 	else // external command
