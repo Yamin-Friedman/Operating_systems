@@ -26,11 +26,11 @@ bool check_valid_num(char *string,int *num){
 			*num += *string - 48;
 		}
 		else{
-			return false;
+			return FALSE;
 		}
 		string++;
 	}
-	return true;
+	return TRUE;
 }
 
 void add_to_jobs(int pID, char *cmdstring){
@@ -42,7 +42,7 @@ void add_to_jobs(int pID, char *cmdstring){
 		exit(-1);
 	}
 
-	new_job_node->stopped = true;
+	new_job_node->stopped = TRUE;
 	new_job_node->pid = pID;
 	new_job_node->next = NULL;
 	strcpy(new_job_node->program,cmdstring);
@@ -205,7 +205,7 @@ int ExeCmd(job_node* jobs, char* lineSize, char* cmdString)
 		}
 
 		if(curr_node->stopped){
-			curr_node->stopped = false;
+			curr_node->stopped = FALSE;
 			if(kill(curr_node->pid,SIGCONT) == -1){
 				perror("kill:");
 				return 1;
@@ -261,7 +261,7 @@ int ExeCmd(job_node* jobs, char* lineSize, char* cmdString)
 			}
 		}
 
-		curr_node->stopped = false;
+		curr_node->stopped = FALSE;
 		printf("%s\n",curr_node->program);
 		if(kill(curr_node->pid,SIGCONT) == -1){
 			perror("kill:");
@@ -281,7 +281,7 @@ int ExeCmd(job_node* jobs, char* lineSize, char* cmdString)
 	/*************************************************/
 	else // external command
 	{
- 		ExeExternal(args, num_arg, cmdString,false);
+ 		ExeExternal(args, num_arg, cmdString,FALSE);
 	 	return 0;
 	}
     return 0;
@@ -374,7 +374,7 @@ int BgCmd(char* lineSize, void* jobs, char *cmdString)
 
 		}
 
-		ExeExternal(args, num_arg, cmdString,true);
+		ExeExternal(args, num_arg, cmdString,TRUE);
 		return 0;
 		
 	}

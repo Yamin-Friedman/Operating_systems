@@ -16,7 +16,6 @@ extern char history[50][MAX_LINE_SIZE];
 extern char *history_start_ptr = history;
 extern char *hisory_end_ptr = history;
 typedef struct job_node job_node;
-typedef enum { FALSE , TRUE } bool;
 int ExeComp(char* lineSize);
 int BgCmd(char* lineSize, void* jobs, char *cmdString);
 int ExeCmd(job_node* jobs, char* lineSize, char* cmdString);
