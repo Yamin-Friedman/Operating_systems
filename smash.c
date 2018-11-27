@@ -20,6 +20,7 @@ char lineSize[MAX_LINE_SIZE];
 char history[50][MAX_LINE_SIZE];
 char *history_start_ptr = history;
 char *hisory_end_ptr = history;
+bool historyModuloFlag = 0;// if we got more than 50 commands our start ptr will start to move
 //**************************************************************************************
 // function name: main
 // Description: main function of smash. get command from user and calls command functions
@@ -39,15 +40,15 @@ int main(int argc, char *argv[])
 	/* add your code here */
 	struct sigaction cntlc_act;
 	cntlc_act.sa_handler = &handler_cntlc;
-	sigfillset(cntlc_act.sa_mask);
+	sigfillset(cntlc_act.sa_mask);//sig Interrupt (ctrl C)
 
 	struct sigaction cntlz_act;
 	cntlz_act.sa_handler = &handler_cntlz;
-	sigfillset(cntlz_act.sa_mask);
+	sigfillset(cntlz_act.sa_mask);//sig Stop pause
 
 	struct sigaction sigchld_act;
 	sigchld_act.sa_handler = &handler_sigchld;
-	sigfillset(sigchld_act.sa_mask);
+	sigfillset(sigchld_act.sa_mask);//sig child say child process died
 
 	sigaction(SIGINT, &cntlc_act, NULL);
 	sigaction(SIGTSTP, &cntlz_act, NULL);

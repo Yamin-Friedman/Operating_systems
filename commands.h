@@ -22,6 +22,7 @@ int ExeComp(char* lineSize);
 int BgCmd(char* lineSize, void* jobs);
 int ExeCmd(job_node* jobs, char* lineSize, char* cmdString);
 void ExeExternal(char *args[MAX_ARG],int num_args, char* cmdString);
-char *lastLocation;
+char lastLocation[MAX_LINE_SIZE];
+string historyList[50];
 #endif
 
