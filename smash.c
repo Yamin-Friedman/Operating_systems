@@ -18,9 +18,9 @@ char* L_Fg_Cmd;
 int fg_pid;
 job_node *jobs = NULL; //This represents the list of jobs. Please change to a preferred type (e.g array of char*)
 char lineSize[MAX_LINE_SIZE];
-char history[50][MAX_LINE_SIZE];
-char *history_start_ptr = history;
-char *hisory_end_ptr = history;
+//char history[50][MAX_LINE_SIZE];
+//char *history_start_ptr = history;
+//char *hisory_end_ptr = history;
 //**************************************************************************************
 // function name: main
 // Description: main function of smash. get command from user and calls command functions
@@ -40,15 +40,15 @@ int main(int argc, char *argv[])
 	/* add your code here */
 	struct sigaction cntlc_act;
 	cntlc_act.sa_handler = &handler_cntlc;
-	sigfillset(cntlc_act.sa_mask);
+	sigfillset(&cntlc_act.sa_mask);
 
 	struct sigaction cntlz_act;
 	cntlz_act.sa_handler = &handler_cntlz;
-	sigfillset(cntlz_act.sa_mask);
+	sigfillset(&cntlz_act.sa_mask);
 
 	struct sigaction sigchld_act;
 	sigchld_act.sa_handler = &handler_sigchld;
-	sigfillset(sigchld_act.sa_mask);
+	sigfillset(&sigchld_act.sa_mask);
 
 	sigaction(SIGINT, &cntlc_act, NULL);
 	sigaction(SIGTSTP, &cntlz_act, NULL);

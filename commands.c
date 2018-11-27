@@ -52,8 +52,12 @@ void add_to_jobs(int pID, char *cmdstring){
 			break;
 		}
 	}
-	curr_node->next = new_job_node;
-
+	if(curr_node == NULL){
+		jobs = new_job_node;
+	}
+	else {
+		curr_node->next = new_job_node;
+	}
 	if(clock_gettime(CLOCK_REALTIME,&curr_time) == -1){
 		perror("gettime:");
 		return;
@@ -110,7 +114,7 @@ int ExeCmd(job_node* jobs, char* lineSize, char* cmdString)
 					printf("smash error:> path not found\n");
 					return 1;
 				}
-				char *strcpy(char lastLocation, const char currLocation);
+				strcpy(lastLocation, currLocation);
 				return 0;
 			}
 			else {
@@ -120,7 +124,7 @@ int ExeCmd(job_node* jobs, char* lineSize, char* cmdString)
 					printf("smash error:> %s path not found\n", args[1]);
 					return 1;
 				}
-				char *strcpy(char lastLocation, const char currLocation);
+				strcpy(lastLocation,currLocation);
 				return 0;
 			}
 
@@ -222,7 +226,6 @@ int ExeCmd(job_node* jobs, char* lineSize, char* cmdString)
 	{
 		int job_num = 0;
 		int curr_job_num = 0;
-		int status;
 		job_node *curr_node = jobs;
 		job_node *last_stopped = NULL;
 		if(curr_node == NULL){
@@ -308,7 +311,7 @@ void ExeExternal(char *args[MAX_ARG],int num_args, char* cmdString,bool backgrou
 		case 0 :
                 	// Child Process
 			setpgrp();
-			status = execv(cmdString,args);
+			status = execvp(args[0],args);
 			if(status == -1){
 				perror("execv:");
 				exit(-1);
@@ -320,7 +323,7 @@ void ExeExternal(char *args[MAX_ARG],int num_args, char* cmdString,bool backgrou
 			else {
 				fg_pid = pID;
 				waitpid(pID, &status, WUNTRACED);
-				if (status == WIFSTOPPED) {
+				if (WIFSTOPPED(status)) {
 					add_to_jobs(pID, cmdString);
 				}
 			}
