@@ -62,28 +62,29 @@ int ExeCmd(job_node* jobs, char* lineSize, char* cmdString)
 		args[i] = strtok(NULL, delimiters); 
 		if (args[i] != NULL) 
 			num_arg++; 
-		if (history_start_ptr == (history + 49))// if array is full, go back to the start of array
-		{
-			history_start_ptr = history;// move to start of array
-			history_end_ptr = history_start_ptr + 1;
-			historyModuloFlag = 1;
-		}
-			
-		else
-		{
-			if (historyModuloFlag)// now end need to move
-			{
-				if(history_start_ptr == (history + 48))
-					history_end_ptr=history;
-				else history_end_ptr++;
-			}
-			
-			history_start_ptr++;
-		}
 		
-		*history_start_ptr = cmd;
  
 	}
+	if (history_start_ptr == (history + 49))// if array is full, go back to the start of array
+	{
+		history_start_ptr = history;// move to start of array
+		history_end_ptr = history_start_ptr + 1;
+		historyModuloFlag = 1;
+	}
+
+	else
+	{
+		if (historyModuloFlag)// now end need to move
+		{
+			if (history_start_ptr == (history + 48))
+				history_end_ptr = history;
+			else history_end_ptr++;
+		}
+
+		history_start_ptr++;
+	}
+
+	*history_start_ptr = cmd;
 /*************************************************/
 // Built in Commands PLEASE NOTE NOT ALL REQUIRED
 // ARE IN THIS CHAIN OF IF COMMANDS. PLEASE ADD
