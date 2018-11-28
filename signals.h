@@ -24,6 +24,8 @@ typedef struct job_node {
 extern int fg_pid;
 extern job_node *jobs;
 
+void send_signal(int signal,int pid);
+
 void handler_cntlc(int);
 void handler_cntlz(int);
 

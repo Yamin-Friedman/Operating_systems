@@ -3,29 +3,71 @@
 #include "commands.h"
 
 void quit_with_kill(){
+	job_node *curr_node = jobs;
+	job_node *next_node = NULL;
+	int job_num = 0;
+	int status;
+	int res;
 
+	while(curr_node != NULL){
+		job_num++;
+		printf("[%d] %s %d - Sending SIGTERM... ",job_num,curr_node->program,curr_node->pid);
+		res = kill(curr_node->pid,SIGTERM);
+		if(res == -1){
+			perror("kill:");
+		}
+
+		res = waitpid(curr_node->pid,&status,WUNTRACED|WNOHANG);
+		if(res == -1){
+			perror("waitpid:");
+			break;
+		}
+
+		if(WIFSIGNALED(status)){
+			printf("Done.\n");
+		}
+		else{
+
+			sleep(5);
+
+			res = waitpid(curr_node->pid,&status,WUNTRACED|WNOHANG);
+			if(res == -1){
+				perror("waitpid:");
+				break;
+			}
+
+			if(WIFSIGNALED(status)){
+				printf("Done.\n");
+			}
+			else {
+				printf(" (5 sec passed) Sending SIGKILL... Done.\n");
+				res = kill(curr_node->pid, SIGKILL);
+				if (res == -1) {
+					perror("kill:");
+				}
+			}
+		}
+
+		next_node = curr_node->next;
+		free(curr_node);
+		curr_node = next_node;
+	}
+
+	exit(0);
 }
 
 void quit_without_kill(){
 	// needs to erase all dynamic memory
 	job_node *curr_node = jobs;
 	job_node *next_node;
+
 	while(curr_node != NULL){
 		next_node = curr_node->next;
 		free(curr_node);
 		curr_node = next_node;
 	}
-	exit(0);
-}
 
-void send_signal(int signal,int pid){
-	printf("test\n");
-	char *signal_string = strsignal(signal);
-	if(kill(pid,signal) == -1){
-		perror("kill:");
-		return;
-	}
-	printf("signal %s was sent to pid %d\n",signal_string,pid);
+	exit(0);
 }
 
 bool remove_job(int pid){
@@ -97,11 +139,6 @@ void fg_command(int job_num) {
 
 	if(curr_node->stopped){
 		curr_node->stopped = FALSE;
-//		if(kill(curr_node->pid,SIGCONT) == -1){
-//			perror("kill:");
-//			return;
-//		}
-//		printf("signal SIGCONT was sent to pid %d\n",curr_node->pid);
 		send_signal(SIGCONT,curr_node->pid);
 	}
 
@@ -133,6 +170,9 @@ void bg_command(int job_num){
 			break;
 		}
 
+		if(curr_node->next == NULL)
+			break;
+
 		curr_node = curr_node->next;
 	}
 
@@ -150,11 +190,7 @@ void bg_command(int job_num){
 
 	curr_node->stopped = FALSE;
 	printf("%s\n",curr_node->program);
-	if(kill(curr_node->pid,SIGCONT) == -1){
-		perror("kill:");
-		return;
-	}
-	printf("signal SIGCONT was sent to pid %d\n",curr_node->pid);
+	send_signal(SIGCONT,curr_node->pid);
 }
 
 void print_jobs(){
@@ -249,6 +285,10 @@ int ExeCmd(job_node* jobs, char* lineSize, char* cmdString)
 	/*************************************************/
 	else if (!strcmp(cmd, "pwd")) 
 	{
+		if(num_arg > 0){
+			goto error;
+		}
+
 		char curr_dir[MAX_LINE_SIZE + 1];
 
 		if(getcwd(curr_dir,MAX_LINE_SIZE) == -1){
@@ -262,11 +302,19 @@ int ExeCmd(job_node* jobs, char* lineSize, char* cmdString)
 	
 	else if (!strcmp(cmd, "jobs")) 
 	{
+		if(num_arg > 0){
+			goto error;
+		}
+
  		print_jobs();
 	}
 	/*************************************************/
 	else if (!strcmp(cmd, "showpid")) 
 	{
+		if(num_arg > 0){
+			goto error;
+		}
+
 		int pid = getpid();
 		printf("smash pid is %d\n",pid);
 	}
@@ -318,13 +366,21 @@ int ExeCmd(job_node* jobs, char* lineSize, char* cmdString)
 	else if (!strcmp(cmd, "kill"))
 	{
 
-	}/*************************************************/
+	}
+	/*************************************************/
 	else if (!strcmp(cmd, "mv"))
 	{
 
-	}/*************************************************/
+	}
+	/*************************************************/
 	else if (!strcmp(cmd, "quit"))
 	{
+		if(num_arg > 1){
+			goto error;
+		}
+		if(num_arg == 1 && !strcmp(args[1],"kill"))
+			goto error;
+
    		if(num_arg == 1 && strcmp(args[1],"kill")){
 		    quit_with_kill();
 	    } else{
@@ -334,7 +390,7 @@ int ExeCmd(job_node* jobs, char* lineSize, char* cmdString)
 	/*************************************************/
 	else // external command
 	{
- 		ExeExternal(args, num_arg, cmdString,FALSE);
+ 		ExeExternal(args, cmdString,FALSE);
 	 	return 0;
 	}
     return 0;
@@ -349,7 +405,7 @@ int ExeCmd(job_node* jobs, char* lineSize, char* cmdString)
 // Parameters: external command arguments, external command string
 // Returns: void
 //**************************************************************************************
-void ExeExternal(char *args[MAX_ARG],int num_args, char* cmdString,bool background)
+void ExeExternal(char *args[MAX_ARG], char* cmdString,bool background)
 {
 	int pID;
 	int pid_res = 0;
@@ -399,11 +455,7 @@ int ExeComp(char* lineSize)
 	char *args[MAX_ARG];
     if ((strstr(lineSize, "|")) || (strstr(lineSize, "<")) || (strstr(lineSize, ">")) || (strstr(lineSize, "*")) || (strstr(lineSize, "?")) || (strstr(lineSize, ">>")) || (strstr(lineSize, "|&")))
     {
-		// Add your code here (execute a complicated command)
-					
-		/* 
-		your code
-		*/
+		return 0;
 	} 
 	return -1;
 }
@@ -435,7 +487,7 @@ int BgCmd(char* lineSize, void* jobs, char *cmdString)
 
 		}
 
-		ExeExternal(args, num_arg, cmdString,TRUE);
+		ExeExternal(args, cmdString,TRUE);
 		return 0;
 		
 	}

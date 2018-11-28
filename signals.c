@@ -6,26 +6,25 @@
 
 #include "signals.h"
 
+void send_signal(int signal,int pid){
+	if(kill(pid,signal) == -1){
+		perror("kill:");
+		return;
+	}
+	printf("signal %d was sent to pid %d\n",signal,pid);
+}
 
 /* Name: handler_cntlc
    Synopsis: handle the Control-C */
 void handler_cntlc(int sig_num) {
 	if(fg_pid == 0)
 		return;
-	if(kill(fg_pid,SIGINT) == -1){
-		perror("kill SIGINT:");
-		return;
-	}
-	printf("signal SIGINT was sent to pid %d\n",fg_pid);
+	send_signal(SIGINT,fg_pid);
 }
 
 void handler_cntlz(int sig_num) {
 	if(fg_pid == 0)
 		return;
-	if(kill(fg_pid,SIGTSTP) == -1){
-		perror("kill SIGTSTP:");
-		return;
-	}
-	printf("signal SIGTSTP was sent to pid %d\n",fg_pid);
+	send_signal(SIGTSTP,fg_pid);
 }
 
