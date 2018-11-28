@@ -3,24 +3,20 @@ main file. This file contains the main function of smash
 *******************************************************************/
 #include <sys/types.h>
 #include <sys/wait.h>
-#include <unistd.h> 
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
-#include <signal.h>
 #include "commands.h"
-#include "signals.h"
 #define MAX_LINE_SIZE 80
 #define MAXARGS 20
 
 
 char* L_Fg_Cmd;
+int fg_pid = 0;
 job_node *jobs = NULL; //This represents the list of jobs. Please change to a preferred type (e.g array of char*)
 char lineSize[MAX_LINE_SIZE];
-char history[50][MAX_LINE_SIZE];
-char *history_start_ptr = history;
-char *hisory_end_ptr = history;
-bool historyModuloFlag = 0;// if we got more than 50 commands our start ptr will start to move
+//char history[50][MAX_LINE_SIZE];
+//char *history_start_ptr = history;
+//char *hisory_end_ptr = history;
 //**************************************************************************************
 // function name: main
 // Description: main function of smash. get command from user and calls command functions
@@ -40,19 +36,16 @@ int main(int argc, char *argv[])
 	/* add your code here */
 	struct sigaction cntlc_act;
 	cntlc_act.sa_handler = &handler_cntlc;
-	sigfillset(cntlc_act.sa_mask);//sig Interrupt (ctrl C)
+	cntlc_act.sa_flags = SA_RESTART;
+	sigfillset(&cntlc_act.sa_mask);
 
 	struct sigaction cntlz_act;
 	cntlz_act.sa_handler = &handler_cntlz;
-	sigfillset(cntlz_act.sa_mask);//sig Stop pause
-
-	struct sigaction sigchld_act;
-	sigchld_act.sa_handler = &handler_sigchld;
-	sigfillset(sigchld_act.sa_mask);//sig child say child process died
+	cntlz_act.sa_flags = SA_RESTART;
+	sigfillset(&cntlz_act.sa_mask);
 
 	sigaction(SIGINT, &cntlc_act, NULL);
 	sigaction(SIGTSTP, &cntlz_act, NULL);
-	sigaction(SIGCHLD, &sigchld_act, NULL);
 	/************************************/
 
 	/************************************/
@@ -60,10 +53,10 @@ int main(int argc, char *argv[])
 
 
 	
-	L_Fg_Cmd =(char*)malloc(sizeof(char)*(MAX_LINE_SIZE+1));
-	if (L_Fg_Cmd == NULL) 
-			exit (-1); 
-	L_Fg_Cmd[0] = '\0';
+//	L_Fg_Cmd =(char*)malloc(sizeof(char)*(MAX_LINE_SIZE+1));
+//	if (L_Fg_Cmd == NULL)
+//			exit (-1);
+//	L_Fg_Cmd[0] = '\0';
 	
     	while (1)
     	{
@@ -74,7 +67,7 @@ int main(int argc, char *argv[])
 					// perform a complicated Command
 		if(!ExeComp(lineSize)) continue; 
 					// background command	
-	 	if(!BgCmd(lineSize, jobs)) continue; 
+	 	if(!BgCmd(lineSize, jobs, cmdString)) continue;
 					// built in commands
 		ExeCmd(jobs, lineSize, cmdString);
 		
@@ -82,6 +75,5 @@ int main(int argc, char *argv[])
 		lineSize[0]='\0';
 		cmdString[0]='\0';
 	}
-    return 0;
 }
 
