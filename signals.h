@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+
 #define MAX_LINE_SIZE 80
 #define MAX_ARG 20
 
@@ -25,7 +26,6 @@ extern job_node *jobs;
 
 void handler_cntlc(int);
 void handler_cntlz(int);
-void handler_sigchld(int);
 
 #endif
 

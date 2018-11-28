@@ -15,7 +15,7 @@ main file. This file contains the main function of smash
 
 
 char* L_Fg_Cmd;
-int fg_pid;
+int fg_pid = 0;
 job_node *jobs = NULL; //This represents the list of jobs. Please change to a preferred type (e.g array of char*)
 char lineSize[MAX_LINE_SIZE];
 //char history[50][MAX_LINE_SIZE];
@@ -40,19 +40,16 @@ int main(int argc, char *argv[])
 	/* add your code here */
 	struct sigaction cntlc_act;
 	cntlc_act.sa_handler = &handler_cntlc;
+	cntlc_act.sa_flags = SA_RESTART;
 	sigfillset(&cntlc_act.sa_mask);
 
 	struct sigaction cntlz_act;
 	cntlz_act.sa_handler = &handler_cntlz;
+	cntlz_act.sa_flags = SA_RESTART;
 	sigfillset(&cntlz_act.sa_mask);
-
-	struct sigaction sigchld_act;
-	sigchld_act.sa_handler = &handler_sigchld;
-	sigfillset(&sigchld_act.sa_mask);
 
 	sigaction(SIGINT, &cntlc_act, NULL);
 	sigaction(SIGTSTP, &cntlz_act, NULL);
-	sigaction(SIGCHLD, &sigchld_act, NULL);
 	/************************************/
 
 	/************************************/

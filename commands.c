@@ -18,22 +18,37 @@ void quit_without_kill(){
 	exit(0);
 }
 
-bool check_valid_num(char *string,int *num){
-	*num = 0;
-	while (string != "\0"){
-		*num *= 10;
-		if(*string >= '0' && *string <= '9'){
-			*num += *string - 48;
-		}
-		else{
-			return FALSE;
-		}
-		string++;
+void send_signal(int signal,int pid){
+	printf("test\n");
+	char *signal_string = strsignal(signal);
+	if(kill(pid,signal) == -1){
+		perror("kill:");
+		return;
 	}
-	return TRUE;
+	printf("signal %s was sent to pid %d\n",signal_string,pid);
 }
 
-void add_to_jobs(int pID, char *cmdstring){
+bool remove_job(int pid){
+	job_node *curr_node = jobs;
+	job_node *next_node;
+	if(curr_node != NULL && curr_node->pid == pid){
+		jobs = curr_node->next;
+		free(curr_node);
+		return TRUE;
+	}
+	while(curr_node != NULL){
+		next_node = curr_node->next;
+		if(next_node != NULL && next_node->pid == pid){
+			curr_node->next = next_node->next;
+			free(next_node);
+			return TRUE;
+		}
+		curr_node = curr_node->next;
+	}
+	return FALSE;
+}
+
+void add_to_jobs(int pID, char *cmdstring, bool stopped){
 	struct timespec curr_time;
 	job_node *curr_node = jobs;
 	job_node *new_job_node = (job_node*)malloc(sizeof(job_node));
@@ -42,7 +57,7 @@ void add_to_jobs(int pID, char *cmdstring){
 		exit(-1);
 	}
 
-	new_job_node->stopped = TRUE;
+	new_job_node->stopped = stopped;
 	new_job_node->pid = pID;
 	new_job_node->next = NULL;
 	strcpy(new_job_node->program,cmdstring);
@@ -51,6 +66,7 @@ void add_to_jobs(int pID, char *cmdstring){
 		if(curr_node->next == NULL){
 			break;
 		}
+		curr_node = curr_node->next;
 	}
 	if(curr_node == NULL){
 		jobs = new_job_node;
@@ -63,6 +79,101 @@ void add_to_jobs(int pID, char *cmdstring){
 		return;
 	}
 	new_job_node->start_time = curr_time.tv_sec;
+}
+
+void fg_command(int job_num) {
+	int curr_job_num = 0;
+	int status;
+	job_node *curr_node = jobs;
+
+	while(curr_node->next != NULL){
+		curr_job_num++;
+		if(job_num && curr_job_num  == job_num){
+			break;
+		}
+
+		curr_node = curr_node->next;
+	}
+
+	if(curr_node->stopped){
+		curr_node->stopped = FALSE;
+//		if(kill(curr_node->pid,SIGCONT) == -1){
+//			perror("kill:");
+//			return;
+//		}
+//		printf("signal SIGCONT was sent to pid %d\n",curr_node->pid);
+		send_signal(SIGCONT,curr_node->pid);
+	}
+
+	fg_pid = curr_node->pid;
+	waitpid(curr_node->pid,&status,WUNTRACED);
+	fg_pid = 0;
+	if(WIFSTOPPED(status)) {
+		curr_node->stopped = TRUE;
+	}
+	if(WIFSIGNALED(status)){
+		remove_job(curr_node->pid);
+	}
+}
+
+void bg_command(int job_num){
+	int curr_job_num = 0;
+	job_node *curr_node = jobs;
+	job_node *last_stopped = NULL;
+	if(curr_node == NULL){
+		return;
+	}
+
+	while(curr_node != NULL){
+		curr_job_num++;
+		if(curr_node->stopped){
+			last_stopped = curr_node;
+		}
+		if(job_num && curr_job_num  == job_num){
+			break;
+		}
+
+		curr_node = curr_node->next;
+	}
+
+	if(!job_num){
+		curr_node = last_stopped;
+		if(last_stopped == NULL){
+			return;
+		}
+	}
+	else{
+		if(!curr_node->stopped){
+			return;
+		}
+	}
+
+	curr_node->stopped = FALSE;
+	printf("%s\n",curr_node->program);
+	if(kill(curr_node->pid,SIGCONT) == -1){
+		perror("kill:");
+		return;
+	}
+	printf("signal SIGCONT was sent to pid %d\n",curr_node->pid);
+}
+
+void print_jobs(){
+	int job_num = 1;
+	struct timespec curr_time;
+	if(clock_gettime(CLOCK_REALTIME,&curr_time) == -1){
+		perror("gettime:");
+		return;
+	}
+	job_node *curr_node = jobs;
+	while(curr_node != NULL){
+		time_t time = curr_time.tv_sec - curr_node->start_time;
+		if(curr_node->stopped)
+			printf("[%d] %s : %d %d secs (Stopped)\n",job_num,curr_node->program,curr_node->pid,(int)time);
+		else
+			printf("[%d] %s : %d %d secs\n",job_num,curr_node->program,curr_node->pid,(int)time);
+		job_num++;
+		curr_node = curr_node->next;
+	}
 }
 
 //********************************************
@@ -151,23 +262,7 @@ int ExeCmd(job_node* jobs, char* lineSize, char* cmdString)
 	
 	else if (!strcmp(cmd, "jobs")) 
 	{
- 		int job_num = 1;
-		struct timespec curr_time;
-		if(clock_gettime(CLOCK_REALTIME,&curr_time) == -1){
-			perror("gettime:");
-			return -1;
-		}
-		job_node *curr_node = jobs;
-
-		while(curr_node != NULL){
-			time_t time = curr_time.tv_sec - curr_node->start_time;
-			if(curr_node->stopped)
-				printf("[%d] %s : %d %d secs (Stopped)\n",job_num,curr_node->program,curr_node->pid,(int)time);
-			else
-				printf("[%d] %s : %d %d secs\n",job_num,curr_node->program,curr_node->pid,(int)time);
-			job_num++;
-			curr_node = curr_node->next;
-		}
+ 		print_jobs();
 	}
 	/*************************************************/
 	else if (!strcmp(cmd, "showpid")) 
@@ -184,8 +279,6 @@ int ExeCmd(job_node* jobs, char* lineSize, char* cmdString)
 	else if (!strcmp(cmd, "fg")) 
 	{
 		int job_num = 0;
-		int curr_job_num = 0;
-		int status;
 		job_node *curr_node = jobs;
 		if(curr_node == NULL){
 			return 0;
@@ -195,84 +288,41 @@ int ExeCmd(job_node* jobs, char* lineSize, char* cmdString)
 			goto error;
 		}
 		else if( num_arg == 1) {
-			if (!check_valid_num(args[1], &job_num)) {
+			job_num = strtol(args[1],NULL,10);
+			if(!job_num){
 				goto error;
 			}
 		}
-		while(curr_node->next != NULL){
-			curr_job_num++;
-			if(job_num && curr_job_num  == job_num){
-				break;
-			}
 
-			curr_node = curr_node->next;
-		}
-
-		if(curr_node->stopped){
-			curr_node->stopped = FALSE;
-			if(kill(curr_node->pid,SIGCONT) == -1){
-				perror("kill:");
-				return 1;
-			}
-			printf("smash > signal SIGCONT was sent to pid %d\n",curr_node->pid);
-		}
-
-		fg_pid = curr_node->pid;
-		waitpid(curr_node->pid,&status,WUNTRACED);
+		fg_command(job_num);
 
 	} 
 	/*************************************************/
 	else if (!strcmp(cmd, "bg")) 
 	{
 		int job_num = 0;
-		int curr_job_num = 0;
-		job_node *curr_node = jobs;
-		job_node *last_stopped = NULL;
-		if(curr_node == NULL){
-			return 0;
-		}
 
 		if(num_arg > 1){
 			goto error;
 		}
 		else if( num_arg == 1) {
-			if (!check_valid_num(args[1], &job_num)) {
+			job_num = strtol(args[1],NULL,10);
+			if(!job_num){
 				goto error;
 			}
 		}
-		while(curr_node->next != NULL){
-			curr_job_num++;
-			if(curr_node->stopped){
-				last_stopped = curr_node;
-			}
-			if(job_num && curr_job_num  == job_num){
-				break;
-			}
 
-			curr_node = curr_node->next;
-		}
-
-		if(!job_num){
-			curr_node = last_stopped;
-			if(last_stopped == NULL){
-				return 0;
-			}
-		}
-		else{
-			if(!curr_node->stopped){
-				return 0;
-			}
-		}
-
-		curr_node->stopped = FALSE;
-		printf("%s\n",curr_node->program);
-		if(kill(curr_node->pid,SIGCONT) == -1){
-			perror("kill:");
-			return 1;
-		}
-		printf("smash > signal SIGCONT was sent to pid %d\n",curr_node->pid);
+		bg_command(job_num);
 	}
 	/*************************************************/
+	else if (!strcmp(cmd, "kill"))
+	{
+
+	}/*************************************************/
+	else if (!strcmp(cmd, "mv"))
+	{
+
+	}/*************************************************/
 	else if (!strcmp(cmd, "quit"))
 	{
    		if(num_arg == 1 && strcmp(args[1],"kill")){
@@ -290,7 +340,7 @@ int ExeCmd(job_node* jobs, char* lineSize, char* cmdString)
     return 0;
 
 	error:
-	printf("smash error: > \"%s\n", cmdString);
+	printf("smash error: > \"%s\"\n", cmdString);
 	return 1;
 }
 //**************************************************************************************
@@ -302,6 +352,7 @@ int ExeCmd(job_node* jobs, char* lineSize, char* cmdString)
 void ExeExternal(char *args[MAX_ARG],int num_args, char* cmdString,bool background)
 {
 	int pID;
+	int pid_res = 0;
 	int status;
 	switch(pID = fork())
 	{
@@ -318,14 +369,21 @@ void ExeExternal(char *args[MAX_ARG],int num_args, char* cmdString,bool backgrou
 			}
 		default:
 			if(background){
-				add_to_jobs(pID, cmdString);
+				add_to_jobs(pID, cmdString,FALSE);
 			}
 			else {
 				fg_pid = pID;
-				waitpid(pID, &status, WUNTRACED);
-				if (WIFSTOPPED(status)) {
-					add_to_jobs(pID, cmdString);
+				pid_res = waitpid(pID,&status,WUNTRACED);
+				if(pid_res == -1){
+					perror("waitpid:");
+					break;
 				}
+				if(WIFSTOPPED(status)) {
+					add_to_jobs(pID, cmdString, TRUE);
+				}
+				if(WIFSIGNALED(status)){
+				}
+				fg_pid = 0;
 			}
 	}
 }
