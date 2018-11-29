@@ -17,6 +17,7 @@ char lineSize[MAX_LINE_SIZE];
 //char history[50][MAX_LINE_SIZE];
 //char *history_start_ptr = history;
 //char *hisory_end_ptr = history;
+char previous_dir[MAX_LINE_SIZE + 1];
 //**************************************************************************************
 // function name: main
 // Description: main function of smash. get command from user and calls command functions
@@ -39,7 +40,7 @@ int main(int argc, char *argv[])
 
 	/************************************/
 	// Init globals 
-
+	*previous_dir = '\0';
 
 	
 //	L_Fg_Cmd =(char*)malloc(sizeof(char)*(MAX_LINE_SIZE+1));
