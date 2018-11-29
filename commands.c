@@ -235,8 +235,29 @@ int ExeCmd(job_node* jobs, char* lineSize, char* cmdString)
 		args[i] = strtok(NULL, delimiters); 
 		if (args[i] != NULL) 
 			num_arg++; 
+		
  
 	}
+	if (history_start_ptr == (history + 49))// if array is full, go back to the start of array
+	{
+		history_start_ptr = history;// move to start of array
+		history_end_ptr = history_start_ptr + 1;
+		historyModuloFlag = 1;
+	}
+
+	else
+	{
+		if (historyModuloFlag)// now end need to move
+		{
+			if (history_start_ptr == (history + 48))
+				history_end_ptr = history;
+			else history_end_ptr++;
+		}
+
+		history_start_ptr++;
+	}
+
+	*history_start_ptr = cmd;
 /*************************************************/
 // Built in Commands PLEASE NOTE NOT ALL REQUIRED
 // ARE IN THIS CHAIN OF IF COMMANDS. PLEASE ADD
@@ -251,7 +272,7 @@ int ExeCmd(job_node* jobs, char* lineSize, char* cmdString)
 				printf("smash error:> path not found\n");
 				return 1;
 			}
-			char *currLocation;
+			char currLocation[MAX_LINE_SIZE];
 			currLocation = getcwd(currLocation, sizeof(*currLocation));
 			if (args[1] == '-')
 			{// move to last location
@@ -321,7 +342,23 @@ int ExeCmd(job_node* jobs, char* lineSize, char* cmdString)
 	/*************************************************/
 	else if (!strcmp(cmd, "history"))
 	{
-
+		
+			int *i;
+			for (i= history_start_ptr; i > history; i--)
+			{
+				printf(*i);
+				printf("/n");
+			}
+		
+			if (!historyModuloFlag)
+			{ 
+				for (i = history + 49; i > history_end_ptr; i--)
+				{
+					printf(*i);
+					printf("/n");
+				}
+			}
+		
 	}
 		/*************************************************/
 	else if (!strcmp(cmd, "fg")) 
