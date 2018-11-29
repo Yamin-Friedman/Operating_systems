@@ -214,7 +214,7 @@ void print_jobs(){
 
 //********************************************
 // function name: ExeCmd
-// Description: interperts and executes built-in commands
+// Description: interprets and executes built-in commands
 // Parameters: pointer to jobs, command string
 // Returns: 0 - success,1 - failure
 //**************************************************************************************
@@ -421,7 +421,7 @@ void ExeExternal(char *args[MAX_ARG], char* cmdString,bool background)
 			status = execvp(args[0],args);
 			if(status == -1){
 				perror("execv:");
-				exit(-1);
+//				exit(-1);
 			}
 		default:
 			if(background){
@@ -451,8 +451,6 @@ void ExeExternal(char *args[MAX_ARG], char* cmdString,bool background)
 //**************************************************************************************
 int ExeComp(char* lineSize)
 {
-	char ExtCmd[MAX_LINE_SIZE+2];
-	char *args[MAX_ARG];
     if ((strstr(lineSize, "|")) || (strstr(lineSize, "<")) || (strstr(lineSize, ">")) || (strstr(lineSize, "*")) || (strstr(lineSize, "?")) || (strstr(lineSize, ">>")) || (strstr(lineSize, "|&")))
     {
 		return 0;

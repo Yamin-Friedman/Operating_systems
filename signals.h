@@ -26,6 +26,9 @@ extern job_node *jobs;
 
 void send_signal(int signal,int pid);
 
+void set_SIGINT();
+void set_SIGTSTP();
+
 void handler_cntlc(int);
 void handler_cntlz(int);
 
