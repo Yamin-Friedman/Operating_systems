@@ -55,12 +55,7 @@ void quit_with_kill(){
 
 	exit(0);
 }
-//********************************************
-// function name: remove_job
-// Description: remove job from job list
-// Parameters: PID
-// Returns: None
-//*********************************************
+
 void quit_without_kill(){
 	// needs to erase all dynamic memory
 	job_node *curr_node = jobs;
@@ -74,12 +69,7 @@ void quit_without_kill(){
 
 	exit(0);
 }
-//********************************************
-// function name: remove_job
-// Description: remove job from job list
-// Parameters: PID
-// Returns: None
-//*********************************************
+
 bool remove_job(int pid){
 	job_node *curr_node = jobs;
 	job_node *next_node;
@@ -99,12 +89,7 @@ bool remove_job(int pid){
 	}
 	return FALSE;
 }
-//********************************************
-// function name: add_to_jobs
-// Description: add a job to job list
-// Parameters: PID, command string and stop flag
-// Returns: None
-//*********************************************
+
 void add_to_jobs(int pID, char *cmdstring, bool stopped){
 	struct timespec curr_time;
 	job_node *curr_node = jobs;
@@ -167,12 +152,7 @@ void fg_command(int job_num) {
 		remove_job(curr_node->pid);
 	}
 }
-//********************************************
-// function name: bg_command
-// Description: make job run in bg
-// Parameters: job number
-// Returns: None
-//*********************************************
+
 void bg_command(int job_num){
 	int curr_job_num = 0;
 	job_node *curr_node = jobs;
@@ -212,34 +192,70 @@ void bg_command(int job_num){
 	printf("%s\n",curr_node->program);
 	send_signal(SIGCONT,curr_node->pid);
 }
-//********************************************
-// function name: print_jobs
-// Description: prints all jobs list
-// Parameters: None
-// Returns: None
-//*********************************************
+
 void print_jobs(){
 	int job_num = 1;
+	int status;
+	bool first = TRUE;
+	int res;
 	struct timespec curr_time;
 	if(clock_gettime(CLOCK_REALTIME,&curr_time) == -1){
 		perror("gettime:");
 		return;
 	}
 	job_node *curr_node = jobs;
+	job_node *next_node;
 	while(curr_node != NULL){
+
+		res = waitpid(curr_node->pid,&status,WNOHANG);
+
+		if(res && (WIFEXITED(status) || WIFSIGNALED(status))){
+			printf("exited\n");
+			next_node = curr_node->next;
+			if(first){
+				jobs = next_node;
+			}
+			free(curr_node);
+			curr_node = next_node;
+			job_num++;
+			continue;
+		}
+
 		time_t time = curr_time.tv_sec - curr_node->start_time;
 		if(curr_node->stopped)
 			printf("[%d] %s : %d %d secs (Stopped)\n",job_num,curr_node->program,curr_node->pid,(int)time);
 		else
 			printf("[%d] %s : %d %d secs\n",job_num,curr_node->program,curr_node->pid,(int)time);
 		job_num++;
+		first = FALSE;
 		curr_node = curr_node->next;
+	}
+}
+
+void kill_job(int signal_num,int job_num){
+	job_node *curr_node = jobs;
+
+	for(int i = 1; i < job_num; i++){
+		if(curr_node == NULL)
+			break;
+		curr_node = curr_node->next;
+	}
+
+	if(curr_node == NULL){
+		printf("smash error: > kill %d – job does not exist\n",job_num);
+		return;
+	}
+
+	if(kill(curr_node->pid,signal_num) == -1){
+		printf("smash error: > kill %d – cannot send signal\n",job_num);
+	}else{
+		printf("smash > signal %d was sent to pid %d\n",signal_num,curr_node->pid);
 	}
 }
 
 //********************************************
 // function name: ExeCmd
-// Description: interperts and executes built-in commands
+// Description: interprets and executes built-in commands
 // Parameters: pointer to jobs, command string
 // Returns: 0 - success,1 - failure
 //**************************************************************************************
@@ -263,26 +279,26 @@ int ExeCmd(job_node* jobs, char* lineSize, char* cmdString)
 		
  
 	}
-	if (history_start_ptr == (history + 49))// if array is full, go back to the start of array
-	{
-		history_start_ptr = history;// move to start of array
-		history_end_ptr = history_start_ptr + 1;
-		historyModuloFlag = 1;
-	}
-
-	else
-	{
-		if (historyModuloFlag)// now end need to move
-		{
-			if (history_start_ptr == (history + 48))
-				history_end_ptr = history;
-			else history_end_ptr++;
-		}
-
-		history_start_ptr++;
-	}
-
-	*history_start_ptr = cmd;
+//	if (history_start_ptr == (history + 49))// if array is full, go back to the start of array
+//	{
+//		history_start_ptr = history;// move to start of array
+//		history_end_ptr = history_start_ptr + 1;
+//		historyModuloFlag = 1;
+//	}
+//
+//	else
+//	{
+//		if (historyModuloFlag)// now end need to move
+//		{
+//			if (history_start_ptr == (history + 48))
+//				history_end_ptr = history;
+//			else history_end_ptr++;
+//		}
+//
+//		history_start_ptr++;
+//	}
+//
+//	*history_start_ptr = cmd;
 /*************************************************/
 // Built in Commands PLEASE NOTE NOT ALL REQUIRED
 // ARE IN THIS CHAIN OF IF COMMANDS. PLEASE ADD
@@ -290,42 +306,83 @@ int ExeCmd(job_node* jobs, char* lineSize, char* cmdString)
 /*************************************************/
 	if (!strcmp(cmd, "cd") ) 
 	{
-		if (num_arg == 1)
-		{
-			if (args[1] == NULL)
-			{
-				printf("smash error:> path not found\n");
+		if(num_arg != 1) {
+			goto error;
+		}
+
+		char *curr_dir = malloc(MAX_LINE_SIZE + 1);
+		if(curr_dir == NULL){
+			printf("Malloc error\n");
+			return 1;
+		}
+		curr_dir = getcwd(curr_dir,MAX_LINE_SIZE);
+		if(curr_dir == NULL){
+			perror("getcwd:");
+			free(curr_dir);
+			return 1;
+		}
+
+		if(*args[1] == '-'){
+			if(previous_dir == NULL) {
+				free(curr_dir);
+				return 0;
+			}
+
+			if(chdir(previous_dir) == -1){
+				perror("chdir:");
+				free(curr_dir);
 				return 1;
 			}
-			char currLocation[MAX_LINE_SIZE];
-			//currLocation = getcwd(0, 0);
-			if (args[1] == '-')
-			{// move to last location
-				int lastLocationflag = chdir(lastLocation);
-				if (lastLocationflag)
-				{
-					printf("smash error:> path not found\n");
-					return 1;
+		} else{
+			if(chdir(args[1]) == -1){
+				if(errno == ENOENT){
+					printf("smash error: > “%s” - path not found\n",args[1]);
+				}else {
+					perror("chdir:");
 				}
-				strcpy(lastLocation, currLocation);
-				return 0;
+				free(curr_dir);
+				return 1;
 			}
-			else {
-				//move to new location
-				int anotherLocation = chdir(args[1]);
-				if (anotherLocation != 0) {
-					printf("smash error:> %s path not found\n", args[1]);
-					return 1;
-				}
-				strcpy(lastLocation,currLocation);
-				return 0;
-			}
+		}
+
+		strcpy(previous_dir,curr_dir);
+		free(curr_dir);
 
 
-		}
-		else {
-			illegal_cmd = TRUE;
-		}
+//		if (num_arg == 1)
+//		{
+//			if (args[1] == NULL)
+//			{
+//				printf("smash error:> path not found\n");
+//				return 1;
+//			}
+//			char *currLocation;
+//			currLocation = getcwd(currLocation, MAX_LINE_SIZE);
+//			if (args[1] == '-')
+//			{// move to last location
+//				int lastLocationflag = chdir(lastLocation);
+//				if (lastLocationflag)
+//				{
+//					printf("smash error:> path not found\n");
+//					return 1;
+//				}
+//				strcpy(lastLocation, currLocation);
+//				return 0;
+//			}
+//			else {
+//				//move to new location
+//				int anotherLocation = chdir(args[1]);
+//				if (anotherLocation != 0) {
+//					printf("smash error:> %s path not found\n", args[1]);
+//					return 1;
+//				}
+//				strcpy(lastLocation,currLocation);
+//				return 0;
+//			}
+//
+//
+//		}
+
 	} 
 	
 	/*************************************************/
@@ -367,23 +424,23 @@ int ExeCmd(job_node* jobs, char* lineSize, char* cmdString)
 	/*************************************************/
 	else if (!strcmp(cmd, "history"))
 	{
-		
-			int *i;
-			for (i= history_start_ptr; i > history; i--)
-			{
-				printf(*i);
-				printf("/n");
-			}
-		
-			if (!historyModuloFlag)
-			{ 
-				for (i = history + 49; i > history_end_ptr; i--)
-				{
-					printf(*i);
-					printf("/n");
-				}
-			}
-		
+//
+//			int *i;
+//			for (i= history_start_ptr; i > history; i--)
+//			{
+//				printf(*i);
+//				printf("/n");
+//			}
+//
+//			if (!historyModuloFlag)
+//			{
+//				for (i = history + 49; i > history_end_ptr; i--)
+//				{
+//					printf(*i);
+//					printf("/n");
+//				}
+//			}
+//
 	}
 		/*************************************************/
 	else if (!strcmp(cmd, "fg")) 
@@ -427,12 +484,32 @@ int ExeCmd(job_node* jobs, char* lineSize, char* cmdString)
 	/*************************************************/
 	else if (!strcmp(cmd, "kill"))
 	{
+		if(num_arg != 2 || *args[1] != '-'){
+			goto error;
+		}
 
+		int signal_num = atoi(args[1] + 1);
+		if(signal_num == 0){
+			goto error;
+		}
+
+		int job_num = atoi(args[2]);
+
+		kill_job(signal_num,job_num);
 	}
 	/*************************************************/
 	else if (!strcmp(cmd, "mv"))
-	{
+		{
+		if(num_arg != 2){
+			goto error;
+		}
 
+		if(rename(args[1],args[2]) == -1){
+			perror("rename:");
+			return 1;
+		} else{
+			printf("%s has been renamed to %s\n",args[1],args[2]);
+		}
 	}
 	/*************************************************/
 	else if (!strcmp(cmd, "quit"))
@@ -440,10 +517,10 @@ int ExeCmd(job_node* jobs, char* lineSize, char* cmdString)
 		if(num_arg > 1){
 			goto error;
 		}
-		if(num_arg == 1 && !strcmp(args[1],"kill"))
+		if(num_arg == 1 && strcmp(args[1],"kill") != 0)
 			goto error;
 
-   		if(num_arg == 1 && strcmp(args[1],"kill")){
+   		if(num_arg == 1){
 		    quit_with_kill();
 	    } else{
 		    quit_without_kill();
@@ -483,7 +560,7 @@ void ExeExternal(char *args[MAX_ARG], char* cmdString,bool background)
 			status = execvp(args[0],args);
 			if(status == -1){
 				perror("execv:");
-				exit(-1);
+//				exit(-1);
 			}
 		default:
 			if(background){
@@ -513,8 +590,6 @@ void ExeExternal(char *args[MAX_ARG], char* cmdString,bool background)
 //**************************************************************************************
 int ExeComp(char* lineSize)
 {
-	char ExtCmd[MAX_LINE_SIZE+2];
-	char *args[MAX_ARG];
     if ((strstr(lineSize, "|")) || (strstr(lineSize, "<")) || (strstr(lineSize, ">")) || (strstr(lineSize, "*")) || (strstr(lineSize, "?")) || (strstr(lineSize, ">>")) || (strstr(lineSize, "|&")))
     {
 		return 0;

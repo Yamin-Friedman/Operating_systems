@@ -14,7 +14,10 @@ char* L_Fg_Cmd;
 int fg_pid = 0;
 job_node *jobs = NULL; //This represents the list of jobs. Please change to a preferred type (e.g array of char*)
 char lineSize[MAX_LINE_SIZE];
-
+//char history[50][MAX_LINE_SIZE];
+//char *history_start_ptr = history;
+//char *hisory_end_ptr = history;
+char previous_dir[MAX_LINE_SIZE + 1];
 //**************************************************************************************
 // function name: main
 // Description: main function of smash. get command from user and calls command functions
@@ -31,24 +34,13 @@ int main(int argc, char *argv[])
 	/************************************/
 	//NOTE: the signal handlers and the function/s that sets the handler should be found in siganls.c
 	//set your signal handlers here
-	/* add your code here */
-	struct sigaction cntlc_act;
-	cntlc_act.sa_handler = &handler_cntlc;
-	cntlc_act.sa_flags = SA_RESTART;
-	sigfillset(&cntlc_act.sa_mask);
-
-	struct sigaction cntlz_act;
-	cntlz_act.sa_handler = &handler_cntlz;
-	cntlz_act.sa_flags = SA_RESTART;
-	sigfillset(&cntlz_act.sa_mask);
-
-	sigaction(SIGINT, &cntlc_act, NULL);
-	sigaction(SIGTSTP, &cntlz_act, NULL);
+	set_SIGINT();
+	set_SIGTSTP();
 	/************************************/
 
 	/************************************/
 	// Init globals 
-
+	*previous_dir = '\0';
 
 	
 //	L_Fg_Cmd =(char*)malloc(sizeof(char)*(MAX_LINE_SIZE+1));
