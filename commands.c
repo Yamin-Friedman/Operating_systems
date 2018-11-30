@@ -251,19 +251,20 @@ void print_jobs(){
 	}
 	job_node *curr_node = jobs;
 	job_node *next_node;
+	job_node *prev_node = jobs;
 	while(curr_node != NULL){
 
 		res = waitpid(curr_node->pid,&status,WNOHANG);
 
 		if(res && (WIFEXITED(status) || WIFSIGNALED(status))){
-			printf("exited\n");
 			next_node = curr_node->next;
-			if(first){
+			if(first == TRUE){
 				jobs = next_node;
+			}else{
+				prev_node->next = next_node;
 			}
 			free(curr_node);
 			curr_node = next_node;
-			job_num++;
 			continue;
 		}
 
@@ -274,6 +275,7 @@ void print_jobs(){
 			printf("[%d] %s : %d %d secs\n",job_num,curr_node->program,curr_node->pid,(int)time);
 		job_num++;
 		first = FALSE;
+		prev_node = curr_node;
 		curr_node = curr_node->next;
 	}
 }
@@ -613,11 +615,12 @@ void ExeExternal(char *args[MAX_ARG], char* cmdString,bool background)
 			status = execvp(args[0],args);
 			if(status == -1){
 				perror("execv:");
-//				exit(-1);
+				exit(-1);
 			}
 		default:
 			if(background){
-				add_to_jobs(pID, cmdString,FALSE);
+				if(waitpid(pID,&status,WNOHANG) == 0)
+					add_to_jobs(pID, cmdString,FALSE);
 			}
 			else {
 				fg_pid = pID;
