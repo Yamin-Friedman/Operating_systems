@@ -55,7 +55,12 @@ void quit_with_kill(){
 
 	exit(0);
 }
-
+//********************************************
+// function name: remove_job
+// Description: remove job from job list
+// Parameters: PID
+// Returns: None
+//*********************************************
 void quit_without_kill(){
 	// needs to erase all dynamic memory
 	job_node *curr_node = jobs;
@@ -69,7 +74,12 @@ void quit_without_kill(){
 
 	exit(0);
 }
-
+//********************************************
+// function name: remove_job
+// Description: remove job from job list
+// Parameters: PID
+// Returns: None
+//*********************************************
 bool remove_job(int pid){
 	job_node *curr_node = jobs;
 	job_node *next_node;
@@ -89,7 +99,12 @@ bool remove_job(int pid){
 	}
 	return FALSE;
 }
-
+//********************************************
+// function name: add_to_jobs
+// Description: add a job to job list
+// Parameters: PID, command string and stop flag
+// Returns: None
+//*********************************************
 void add_to_jobs(int pID, char *cmdstring, bool stopped){
 	struct timespec curr_time;
 	job_node *curr_node = jobs;
@@ -152,7 +167,12 @@ void fg_command(int job_num) {
 		remove_job(curr_node->pid);
 	}
 }
-
+//********************************************
+// function name: bg_command
+// Description: make job run in bg
+// Parameters: job number
+// Returns: None
+//*********************************************
 void bg_command(int job_num){
 	int curr_job_num = 0;
 	job_node *curr_node = jobs;
@@ -192,7 +212,12 @@ void bg_command(int job_num){
 	printf("%s\n",curr_node->program);
 	send_signal(SIGCONT,curr_node->pid);
 }
-
+//********************************************
+// function name: print_jobs
+// Description: prints all jobs list
+// Parameters: None
+// Returns: None
+//*********************************************
 void print_jobs(){
 	int job_num = 1;
 	struct timespec curr_time;
@@ -273,7 +298,7 @@ int ExeCmd(job_node* jobs, char* lineSize, char* cmdString)
 				return 1;
 			}
 			char currLocation[MAX_LINE_SIZE];
-			currLocation = getcwd(currLocation, sizeof(*currLocation));
+			//currLocation = getcwd(0, 0);
 			if (args[1] == '-')
 			{// move to last location
 				int lastLocationflag = chdir(lastLocation);

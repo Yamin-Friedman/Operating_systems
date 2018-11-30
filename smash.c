@@ -14,9 +14,7 @@ char* L_Fg_Cmd;
 int fg_pid = 0;
 job_node *jobs = NULL; //This represents the list of jobs. Please change to a preferred type (e.g array of char*)
 char lineSize[MAX_LINE_SIZE];
-//char history[50][MAX_LINE_SIZE];
-//char *history_start_ptr = history;
-//char *hisory_end_ptr = history;
+
 //**************************************************************************************
 // function name: main
 // Description: main function of smash. get command from user and calls command functions
