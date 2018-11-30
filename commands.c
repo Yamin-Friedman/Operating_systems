@@ -1,7 +1,10 @@
 //		commands.c
 //********************************************
 #include "commands.h"
-
+char history[50][MAX_LINE_SIZE];
+int history_start = 0;
+int history_end = 0;
+int historyModuloFlag = 0;
 
 //**************************************************************************************
 // function name: quit_with_kill
@@ -332,26 +335,27 @@ int ExeCmd(job_node* jobs, char* lineSize, char* cmdString)
 		
  
 	}
-//	if (history_start_ptr == (history + 49))// if array is full, go back to the start of array
-//	{
-//		history_start_ptr = history;// move to start of array
-//		history_end_ptr = history_start_ptr + 1;
-//		historyModuloFlag = 1;
-//	}
-//
-//	else
-//	{
-//		if (historyModuloFlag)// now end need to move
-//		{
-//			if (history_start_ptr == (history + 48))
-//				history_end_ptr = history;
-//			else history_end_ptr++;
-//		}
-//
-//		history_start_ptr++;
-//	}
-//
-//	*history_start_ptr = cmd;
+	if (history_start ==  49)// if array is full, go back to the start of array
+	{
+		history_start = 0;// move to start of array
+		history_end = history_start + 1;
+		historyModuloFlag = 1;
+	}
+
+	else
+	{
+		if (historyModuloFlag)// now end need to move
+		{
+			if (history_start == 48)
+				history_end = 0;
+			else history_end++;
+		}
+
+		history_start++;
+	}
+	//history[history_start] = cmd;
+	strcpy(history[history_start], cmd );
+	
 /*************************************************/
 // Built in Commands PLEASE NOTE NOT ALL REQUIRED
 // ARE IN THIS CHAIN OF IF COMMANDS. PLEASE ADD
@@ -478,22 +482,20 @@ int ExeCmd(job_node* jobs, char* lineSize, char* cmdString)
 	else if (!strcmp(cmd, "history"))
 	{
 //
-//			int *i;
-//			for (i= history_start_ptr; i > history; i--)
-//			{
-//				printf(*i);
-//				printf("/n");
-//			}
-//
-//			if (!historyModuloFlag)
-//			{
-//				for (i = history + 49; i > history_end_ptr; i--)
-//				{
-//					printf(*i);
-//					printf("/n");
-//				}
-//			}
-//
+			int i;
+			for (i= history_start-1; i >=0 ; i--)
+			{
+				printf("%s\n", history[i]);
+			}
+
+			if (historyModuloFlag)
+			{
+				for (i = 49; i >= history_end; i--)
+				{
+					printf("%s\n", history[i]);
+				}
+			}
+
 	}
 		/*************************************************/
 	else if (!strcmp(cmd, "fg")) 
