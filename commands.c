@@ -2,6 +2,13 @@
 //********************************************
 #include "commands.h"
 
+
+//**************************************************************************************
+// function name: quit_with_kill
+// Description: closes down the shell by killing all background jobs in order and freeing the memory
+// Parameters: none
+// Returns: exits the program successfully
+//**************************************************************************************
 void quit_with_kill(){
 	job_node *curr_node = jobs;
 	job_node *next_node = NULL;
@@ -56,6 +63,12 @@ void quit_with_kill(){
 	exit(0);
 }
 
+//**************************************************************************************
+// function name: quit_without_kill
+// Description: closes down the shell freeing the memory
+// Parameters: none
+// Returns: exits the program successfully
+//**************************************************************************************
 void quit_without_kill(){
 	// needs to erase all dynamic memory
 	job_node *curr_node = jobs;
@@ -70,6 +83,13 @@ void quit_without_kill(){
 	exit(0);
 }
 
+
+//**************************************************************************************
+// function name: remove_job
+// Description: Removes a job from the background jobs list based on the pid
+// Parameters: int pid - the PID of the job to remove from the list
+// Returns: bool of success or failure
+//**************************************************************************************
 bool remove_job(int pid){
 	job_node *curr_node = jobs;
 	job_node *next_node;
@@ -90,6 +110,14 @@ bool remove_job(int pid){
 	return FALSE;
 }
 
+//**************************************************************************************
+// function name: add_to_jobs
+// Description: Adds a new job to the list of background jobs
+// Parameters: int pID - PID of the job to add
+// Parameters: char *cmdstring - program string of the job to add
+// Parameters: bool stopped - If the program is running in the background or not
+// Returns: void
+//**************************************************************************************
 void add_to_jobs(int pID, char *cmdstring, bool stopped){
 	struct timespec curr_time;
 	job_node *curr_node = jobs;
@@ -123,6 +151,12 @@ void add_to_jobs(int pID, char *cmdstring, bool stopped){
 	new_job_node->start_time = curr_time.tv_sec;
 }
 
+//**************************************************************************************
+// function name: fg_command
+// Description: Runs the background job based on job_num in the foreground
+// Parameters: int job_num - if zero run the last program run in background otherwise run the job based on the number given
+// Returns: void
+//**************************************************************************************
 void fg_command(int job_num) {
 	int curr_job_num = 0;
 	int status;
@@ -153,6 +187,12 @@ void fg_command(int job_num) {
 	}
 }
 
+//**************************************************************************************
+// function name: bg_command
+// Description: Signals a job stopped in the background to continue running in the background
+// Parameters: int job_num - if zero run the last program stopped in background otherwise run the job based on the number given
+// Returns: void
+//**************************************************************************************
 void bg_command(int job_num){
 	int curr_job_num = 0;
 	job_node *curr_node = jobs;
@@ -193,6 +233,12 @@ void bg_command(int job_num){
 	send_signal(SIGCONT,curr_node->pid);
 }
 
+//**************************************************************************************
+// function name: print_jobs
+// Description: Prints out the list of jobs in the background and cleans up any jobs that have finished running
+// Parameters: none
+// Returns: void
+//**************************************************************************************
 void print_jobs(){
 	int job_num = 1;
 	int status;
@@ -232,6 +278,13 @@ void print_jobs(){
 	}
 }
 
+//**************************************************************************************
+// function name: kill_job
+// Description: Sends a signal to a job running in background
+// Parameters: int signal_num - Number of signal to send
+// Parameters: int job_num - The number of the job in the job list
+// Returns: void
+//**************************************************************************************
 void kill_job(int signal_num,int job_num){
 	job_node *curr_node = jobs;
 
