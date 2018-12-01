@@ -8,28 +8,45 @@
 #include <string.h>
 
 
-#define MAX_LINE_SIZE 80
-#define MAX_ARG 20
 
 typedef enum { FALSE , TRUE } bool;
-typedef struct job_node {
-	int pid;
-	time_t start_time;
-	char program[MAX_LINE_SIZE + 1];
-	bool stopped;
-	struct job_node *next;
 
-} job_node;
 
+// The PID of the foreground process. is zero if no process is running in the foreground
 extern int fg_pid;
-extern job_node *jobs;
 
+
+//**************************************************************************************
+// function name: send_signal
+// Description: Sends a signal of number signal to the process based on pid and prints a message
+// Parameters: int signal - The number of signal to send
+// Parameters: int pid - The PID of the process to send the signal to
+// Returns: void
+//**************************************************************************************
 void send_signal(int signal,int pid);
 
+//**************************************************************************************
+// function name: set_SIGINT
+// Description: Sets the signal handler for SIGINT
+// Parameters: none
+// Returns: void
+//**************************************************************************************
 void set_SIGINT();
+
+//**************************************************************************************
+// function name: set_SIGTSTP
+// Description: Sets the signal handler for SIGTSTP
+// Parameters: none
+// Returns: void
+//**************************************************************************************
 void set_SIGTSTP();
 
+/* Name: handler_cntlc
+   Synopsis: handle the Control-C */
 void handler_cntlc(int);
+
+/* Name: handler_cntlz
+   Synopsis: handle the Control-Z */
 void handler_cntlz(int);
 
 #endif

@@ -12,7 +12,7 @@ main file. This file contains the main function of smash
 
 char* L_Fg_Cmd;
 int fg_pid = 0;
-job_node *jobs = NULL; //This represents the list of jobs. Please change to a preferred type (e.g array of char*)
+
 char lineSize[MAX_LINE_SIZE];
 //char history[50][MAX_LINE_SIZE];
 //char *history_start_ptr = history;
@@ -41,13 +41,8 @@ int main(int argc, char *argv[])
 	/************************************/
 	// Init globals 
 	*previous_dir = '\0';
+	job_node *jobs = NULL; //This represents the list of jobs. Please change to a preferred type (e.g array of char*)
 
-	
-//	L_Fg_Cmd =(char*)malloc(sizeof(char)*(MAX_LINE_SIZE+1));
-//	if (L_Fg_Cmd == NULL)
-//			exit (-1);
-//	L_Fg_Cmd[0] = '\0';
-	
     	while (1)
     	{
 	 	printf("smash > ");

@@ -1,5 +1,7 @@
 //		commands.c
 //********************************************
+// This module is in charge of handling all the commands run through the small shell.
+//********************************************
 #include "commands.h"
 char history[50][MAX_LINE_SIZE];
 int history_start = 0;
@@ -406,42 +408,6 @@ int ExeCmd(job_node* jobs, char* lineSize, char* cmdString)
 
 		strcpy(previous_dir,curr_dir);
 		free(curr_dir);
-
-
-//		if (num_arg == 1)
-//		{
-//			if (args[1] == NULL)
-//			{
-//				printf("smash error:> path not found\n");
-//				return 1;
-//			}
-//			char *currLocation;
-//			currLocation = getcwd(currLocation, MAX_LINE_SIZE);
-//			if (args[1] == '-')
-//			{// move to last location
-//				int lastLocationflag = chdir(lastLocation);
-//				if (lastLocationflag)
-//				{
-//					printf("smash error:> path not found\n");
-//					return 1;
-//				}
-//				strcpy(lastLocation, currLocation);
-//				return 0;
-//			}
-//			else {
-//				//move to new location
-//				int anotherLocation = chdir(args[1]);
-//				if (anotherLocation != 0) {
-//					printf("smash error:> %s path not found\n", args[1]);
-//					return 1;
-//				}
-//				strcpy(lastLocation,currLocation);
-//				return 0;
-//			}
-//
-//
-//		}
-
 	} 
 	
 	/*************************************************/
@@ -642,7 +608,7 @@ void ExeExternal(char *args[MAX_ARG], char* cmdString,bool background)
 }
 //**************************************************************************************
 // function name: ExeComp
-// Description: executes complicated command
+// Description: checks if it is a complicated command
 // Parameters: command string
 // Returns: 0- if complicated -1- if not
 //**************************************************************************************

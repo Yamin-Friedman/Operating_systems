@@ -12,14 +12,41 @@
 #include "signals.h"
 
 
+#define MAX_LINE_SIZE 80
+#define MAX_ARG 20
+
+typedef struct job_node {
+	int pid;
+	time_t start_time;
+	char program[MAX_LINE_SIZE + 1];
+	bool stopped;
+	struct job_node *next;
+
+} job_node;
+
+extern job_node *jobs;
+
 //extern char history[50][MAX_LINE_SIZE];
 //extern char *history_start_ptr = history;
 //extern char *hisory_end_ptr = history;
 extern char previous_dir[MAX_LINE_SIZE + 1];
-typedef struct job_node job_node;
+
+//**************************************************************************************
+// function name: ExeComp
+// Description: checks if it is a complicated command
+// Parameters: command string
+// Returns: 0- if complicated -1- if not
+//**************************************************************************************
 int ExeComp(char* lineSize);
 int BgCmd(char* lineSize, void* jobs, char *cmdString);
 int ExeCmd(job_node* jobs, char* lineSize, char* cmdString);
+
+//**************************************************************************************
+// function name: ExeExternal
+// Description: executes external command
+// Parameters: external command arguments, external command string
+// Returns: void
+//**************************************************************************************
 void ExeExternal(char *args[MAX_ARG], char* cmdString,bool background);
 char *lastLocation;
 //char history[50][MAX_LINE_SIZE];
