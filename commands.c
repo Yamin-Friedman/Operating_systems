@@ -436,7 +436,6 @@ int ExeCmd(job_node **jobs, char* lineSize, char* cmdString, char previous_dir[M
 		printf("%s\n",curr_dir);
 	}
 	/*************************************************/
-
 	
 	else if (!strcmp(cmd, "jobs")) 
 	{
@@ -612,6 +611,8 @@ void ExeExternal(char *args[MAX_ARG], char* cmdString,bool background, job_node 
 				}
 				if(WIFSTOPPED(status)) {
 					add_to_jobs(pID, cmdString, TRUE,jobs);
+				}
+				if(WIFSIGNALED(status)){
 				}
 				fg_pid = 0;
 			}
