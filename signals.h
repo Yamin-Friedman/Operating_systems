@@ -15,7 +15,6 @@ typedef enum { FALSE , TRUE } bool;
 // The PID of the foreground process. is zero if no process is running in the foreground
 extern int fg_pid;
 
-
 //**************************************************************************************
 // function name: send_signal
 // Description: Sends a signal of number signal to the process based on pid and prints a message

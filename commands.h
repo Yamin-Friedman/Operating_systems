@@ -24,26 +24,46 @@ typedef struct job_node {
 
 } job_node;
 
-
-extern char previous_dir[MAX_LINE_SIZE + 1];
-
 //**************************************************************************************
 // function name: ExeComp
 // Description: checks if it is a complicated command
-// Parameters: command string
+// Parameters: char* lineSize - Command string
 // Returns: 0- if complicated -1- if not
 //**************************************************************************************
 int ExeComp(char* lineSize);
-int BgCmd(char* lineSize, void* jobs, char *cmdString);
+
+//**************************************************************************************
+// function name: BgCmd
+// Description: if command is in background, insert the command to jobs
+// Parameters: char* lineSize - Command string to be overwritten
+// Parameters: job_node **jobs - Pointer to the jobs linked list
+// Parameters: char *cmdString - Command string
+// Parameters: command string, pointer to jobs
+// Returns: 0- BG command -1- if not
+//**************************************************************************************
+int BgCmd(char* lineSize, job_node **jobs, char *cmdString);
+
+//********************************************
+// function name: ExeCmd
+// Description: interprets and executes built-in commands
+// Parameters: job_node **jobs - Pointer to the jobs linked list
+// Parameters: char* lineSize - Command string to be overwritten
+// Parameters: char *cmdString - Command string
+// Parameters:  char previous_dir[MAX_LINE_SIZE + 1] - pointer to previous directory
+// Returns: 0 - success,1 - failure
+//**************************************************************************************
 int ExeCmd(job_node** jobs, char* lineSize, char* cmdString, char previous_dir[MAX_LINE_SIZE + 1]);
 
 //**************************************************************************************
 // function name: ExeExternal
 // Description: executes external command
-// Parameters: pointer to jobs, external command arguments, external command string
+// Parameters: char *args[MAX_ARG] - array of command arguments
+// Parameters: char *cmdString - Command string
+// Parameters: bool background - If the command should be run in background
+// Parameters: job_node **jobs - Pointer to the jobs linked list
 // Returns: void
 //**************************************************************************************
-void ExeExternal(char *args[MAX_ARG], char* cmdString,bool background, job_node **jobs);
+void ExeExternal(char *args[MAX_ARG], char* cmdString, bool background, job_node **jobs);
 
 #endif
 

@@ -9,9 +9,7 @@ main file. This file contains the main function of smash
 #define MAX_LINE_SIZE 80
 
 
-char* L_Fg_Cmd;
-int fg_pid = 0;
-
+int fg_pid = 0; // This is a global variable because the signal handlers must be able to access it
 
 //**************************************************************************************
 // function name: main
@@ -25,7 +23,7 @@ int main(int argc, char *argv[])
 	char lineSize[MAX_LINE_SIZE];
 	char previous_dir[MAX_LINE_SIZE + 1];
 	*previous_dir = '\0';
-	job_node **jobs = malloc(sizeof(job_node*)); //This represents the list of jobs. Please change to a preferred type (e.g array of char*)
+	job_node **jobs = malloc(sizeof(job_node*)); //This represents the list of jobs.
 	*jobs = NULL;
 	/************************************/
 	set_SIGINT();
