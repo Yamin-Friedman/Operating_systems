@@ -6,6 +6,7 @@ main file. This file contains the main function of smash
 #include <stdio.h>
 #include <string.h>
 #include "commands.h"
+
 #define MAX_LINE_SIZE 80
 
 
@@ -30,21 +31,19 @@ int main(int argc, char *argv[])
 	set_SIGTSTP();
 	/************************************/
 
-
-
-    	while (1)
-    	{
-	 	printf("smash > ");
+	while (1)
+	{
+		printf("smash > ");
 		fgets(lineSize, MAX_LINE_SIZE, stdin);
-		strcpy(cmdString, lineSize);    	
+		strcpy(cmdString, lineSize);
 		cmdString[strlen(lineSize)-1]='\0';
-					// perform a complicated Command
-		if(!ExeComp(lineSize)) continue; 
-					// background command	
-	 	if(!BgCmd(lineSize, jobs, cmdString)) continue;
-					// built in commands
+		// perform a complicated Command
+		if(!ExeComp(lineSize)) continue;
+		// background command
+		if(!BgCmd(lineSize, jobs, cmdString)) continue;
+		// built in commands
 		ExeCmd(jobs, lineSize, cmdString,previous_dir);
-		
+
 		/* initialize for next line read*/
 		lineSize[0]='\0';
 		cmdString[0]='\0';
