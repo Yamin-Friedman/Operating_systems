@@ -73,7 +73,7 @@ void quit_with_kill(job_node **jobs){
 //**************************************************************************************
 // function name: quit_without_kill
 // Description: closes down the shell freeing the memory
-// Parameters: job_node *jobs - A pointer to the jobs linked list
+// Parameters: job_node **jobs - A pointer to the jobs linked list
 // Returns: exits the program successfully
 //**************************************************************************************
 void quit_without_kill(job_node **jobs){
@@ -96,7 +96,7 @@ void quit_without_kill(job_node **jobs){
 // function name: remove_job
 // Description: Removes a job from the background jobs list based on the pid
 // Parameters: int pid - the PID of the job to remove from the list
-// Parameters: job_node *jobs - A pointer to the jobs linked list
+// Parameters: job_node **jobs - A pointer to the jobs linked list
 // Returns: bool of success or failure
 //**************************************************************************************
 bool remove_job(int pid, job_node **jobs){
@@ -125,7 +125,7 @@ bool remove_job(int pid, job_node **jobs){
 // Parameters: int pID - PID of the job to add
 // Parameters: char *cmdstring - program string of the job to add
 // Parameters: bool stopped - If the program is running in the background or not
-// Parameters: job_node *jobs - A pointer to the jobs linked list
+// Parameters: job_node **jobs - A pointer to the jobs linked list
 // Returns: void
 //**************************************************************************************
 void add_to_jobs(int pID, char *cmdstring, bool stopped, job_node **jobs){
@@ -165,6 +165,7 @@ void add_to_jobs(int pID, char *cmdstring, bool stopped, job_node **jobs){
 // function name: fg_command
 // Description: Runs the background job based on job_num in the foreground
 // Parameters: int job_num - if zero run the last program run in background otherwise run the job based on the number given
+// Parameters: job_node **jobs - A pointer to the jobs linked list
 // Returns: void
 //**************************************************************************************
 void fg_command(int job_num, job_node **jobs) {
@@ -201,7 +202,7 @@ void fg_command(int job_num, job_node **jobs) {
 // function name: bg_command
 // Description: Signals a job stopped in the background to continue running in the background
 // Parameters: int job_num - if zero run the last program stopped in background otherwise run the job based on the number given
-// Parameters: job_node *jobs - A pointer to the jobs linked list
+// Parameters: job_node **jobs - A pointer to the jobs linked list
 // Returns: void
 //**************************************************************************************
 void bg_command(int job_num, job_node **jobs){
@@ -247,7 +248,7 @@ void bg_command(int job_num, job_node **jobs){
 //**************************************************************************************
 // function name: print_jobs
 // Description: Prints out the list of jobs in the background and cleans up any jobs that have finished running
-// Parameters: job_node *jobs - A pointer to the jobs linked list
+// Parameters: job_node **jobs - A pointer to the jobs linked list
 // Returns: void
 //**************************************************************************************
 void print_jobs(job_node **jobs){
@@ -296,7 +297,7 @@ void print_jobs(job_node **jobs){
 // Description: Sends a signal to a job running in background
 // Parameters: int signal_num - Number of signal to send
 // Parameters: int job_num - The number of the job in the job list
-// Parameters: job_node *jobs - A pointer to the jobs linked list
+// Parameters: job_node **jobs - A pointer to the jobs linked list
 // Returns: void
 //**************************************************************************************
 void kill_job(int signal_num,int job_num, job_node **jobs){
@@ -323,7 +324,10 @@ void kill_job(int signal_num,int job_num, job_node **jobs){
 //********************************************
 // function name: ExeCmd
 // Description: interprets and executes built-in commands
-// Parameters: pointer to jobs, command string, pointer to previous directory
+// Parameters: job_node **jobs - Pointer to the jobs linked list
+// Parameters: char* lineSize - Command string to be overwritten
+// Parameters: char *cmdString - Command string
+// Parameters:  char previous_dir[MAX_LINE_SIZE + 1] - pointer to previous directory
 // Returns: 0 - success,1 - failure
 //**************************************************************************************
 int ExeCmd(job_node **jobs, char* lineSize, char* cmdString, char previous_dir[MAX_LINE_SIZE + 1])
@@ -569,7 +573,10 @@ int ExeCmd(job_node **jobs, char* lineSize, char* cmdString, char previous_dir[M
 //**************************************************************************************
 // function name: ExeExternal
 // Description: executes external command
-// Parameters: pointer to jobs, external command arguments, external command string
+// Parameters: char *args[MAX_ARG] - array of command arguments
+// Parameters: char *cmdString - Command string
+// Parameters: bool background - If the command should be run in background
+// Parameters: job_node **jobs - Pointer to the jobs linked list
 // Returns: void
 //**************************************************************************************
 void ExeExternal(char *args[MAX_ARG], char* cmdString,bool background, job_node **jobs)
@@ -614,7 +621,7 @@ void ExeExternal(char *args[MAX_ARG], char* cmdString,bool background, job_node 
 //**************************************************************************************
 // function name: ExeComp
 // Description: checks if it is a complicated command
-// Parameters: command string
+// Parameters: char* lineSize - Command string
 // Returns: 0- if complicated -1- if not
 //**************************************************************************************
 int ExeComp(char* lineSize)
@@ -628,10 +635,13 @@ int ExeComp(char* lineSize)
 //**************************************************************************************
 // function name: BgCmd
 // Description: if command is in background, insert the command to jobs
+// Parameters: char* lineSize - Command string to be overwritten
+// Parameters: job_node **jobs - Pointer to the jobs linked list
+// Parameters: char *cmdString - Command string
 // Parameters: command string, pointer to jobs
 // Returns: 0- BG command -1- if not
 //**************************************************************************************
-int BgCmd(char* lineSize, void* jobs, char *cmdString)
+int BgCmd(char* lineSize, job_node **jobs, char *cmdString)
 {
 
 	char* cmd;
