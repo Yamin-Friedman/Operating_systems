@@ -11,11 +11,11 @@ int historyModuloFlag = 0;
 //**************************************************************************************
 // function name: quit_with_kill
 // Description: closes down the shell by killing all background jobs in order and freeing the memory
-// Parameters: none
+// Parameters: job_node *jobs - A pointer to the jobs linked list
 // Returns: exits the program successfully
 //**************************************************************************************
-void quit_with_kill(){
-	job_node *curr_node = jobs;
+void quit_with_kill(job_node **jobs){
+	job_node *curr_node = *jobs;
 	job_node *next_node = NULL;
 	int job_num = 0;
 	int status;
@@ -65,18 +65,20 @@ void quit_with_kill(){
 		curr_node = next_node;
 	}
 
+	free(jobs);
+
 	exit(0);
 }
 
 //**************************************************************************************
 // function name: quit_without_kill
 // Description: closes down the shell freeing the memory
-// Parameters: none
+// Parameters: job_node *jobs - A pointer to the jobs linked list
 // Returns: exits the program successfully
 //**************************************************************************************
-void quit_without_kill(){
+void quit_without_kill(job_node **jobs){
 	// needs to erase all dynamic memory
-	job_node *curr_node = jobs;
+	job_node *curr_node = *jobs;
 	job_node *next_node;
 
 	while(curr_node != NULL){
@@ -85,6 +87,7 @@ void quit_without_kill(){
 		curr_node = next_node;
 	}
 
+	free(jobs);
 	exit(0);
 }
 
@@ -93,13 +96,14 @@ void quit_without_kill(){
 // function name: remove_job
 // Description: Removes a job from the background jobs list based on the pid
 // Parameters: int pid - the PID of the job to remove from the list
+// Parameters: job_node *jobs - A pointer to the jobs linked list
 // Returns: bool of success or failure
 //**************************************************************************************
-bool remove_job(int pid){
-	job_node *curr_node = jobs;
+bool remove_job(int pid, job_node **jobs){
+	job_node *curr_node = *jobs;
 	job_node *next_node;
 	if(curr_node != NULL && curr_node->pid == pid){
-		jobs = curr_node->next;
+		*jobs = curr_node->next;
 		free(curr_node);
 		return TRUE;
 	}
@@ -121,11 +125,12 @@ bool remove_job(int pid){
 // Parameters: int pID - PID of the job to add
 // Parameters: char *cmdstring - program string of the job to add
 // Parameters: bool stopped - If the program is running in the background or not
+// Parameters: job_node *jobs - A pointer to the jobs linked list
 // Returns: void
 //**************************************************************************************
-void add_to_jobs(int pID, char *cmdstring, bool stopped){
+void add_to_jobs(int pID, char *cmdstring, bool stopped, job_node **jobs){
 	struct timespec curr_time;
-	job_node *curr_node = jobs;
+	job_node *curr_node = *jobs;
 	job_node *new_job_node = (job_node*)malloc(sizeof(job_node));
 	if(new_job_node == NULL){
 		printf("malloc error\n");
@@ -144,7 +149,7 @@ void add_to_jobs(int pID, char *cmdstring, bool stopped){
 		curr_node = curr_node->next;
 	}
 	if(curr_node == NULL){
-		jobs = new_job_node;
+		*jobs = new_job_node;
 	}
 	else {
 		curr_node->next = new_job_node;
@@ -162,10 +167,10 @@ void add_to_jobs(int pID, char *cmdstring, bool stopped){
 // Parameters: int job_num - if zero run the last program run in background otherwise run the job based on the number given
 // Returns: void
 //**************************************************************************************
-void fg_command(int job_num) {
+void fg_command(int job_num, job_node **jobs) {
 	int curr_job_num = 0;
 	int status;
-	job_node *curr_node = jobs;
+	job_node *curr_node = *jobs;
 
 	while(curr_node->next != NULL){
 		curr_job_num++;
@@ -188,7 +193,7 @@ void fg_command(int job_num) {
 		curr_node->stopped = TRUE;
 	}
 	if(WIFSIGNALED(status)){
-		remove_job(curr_node->pid);
+		remove_job(curr_node->pid,jobs);
 	}
 }
 
@@ -196,11 +201,12 @@ void fg_command(int job_num) {
 // function name: bg_command
 // Description: Signals a job stopped in the background to continue running in the background
 // Parameters: int job_num - if zero run the last program stopped in background otherwise run the job based on the number given
+// Parameters: job_node *jobs - A pointer to the jobs linked list
 // Returns: void
 //**************************************************************************************
-void bg_command(int job_num){
+void bg_command(int job_num, job_node **jobs){
 	int curr_job_num = 0;
-	job_node *curr_node = jobs;
+	job_node *curr_node = *jobs;
 	job_node *last_stopped = NULL;
 	if(curr_node == NULL){
 		return;
@@ -241,10 +247,10 @@ void bg_command(int job_num){
 //**************************************************************************************
 // function name: print_jobs
 // Description: Prints out the list of jobs in the background and cleans up any jobs that have finished running
-// Parameters: none
+// Parameters: job_node *jobs - A pointer to the jobs linked list
 // Returns: void
 //**************************************************************************************
-void print_jobs(){
+void print_jobs(job_node **jobs){
 	int job_num = 1;
 	int status;
 	bool first = TRUE;
@@ -254,9 +260,9 @@ void print_jobs(){
 		perror("gettime:");
 		return;
 	}
-	job_node *curr_node = jobs;
+	job_node *curr_node = *jobs;
 	job_node *next_node;
-	job_node *prev_node = jobs;
+	job_node *prev_node = *jobs;
 	while(curr_node != NULL){
 
 		res = waitpid(curr_node->pid,&status,WNOHANG);
@@ -264,7 +270,7 @@ void print_jobs(){
 		if(res && (WIFEXITED(status) || WIFSIGNALED(status))){
 			next_node = curr_node->next;
 			if(first == TRUE){
-				jobs = next_node;
+				*jobs = next_node;
 			}else{
 				prev_node->next = next_node;
 			}
@@ -290,10 +296,11 @@ void print_jobs(){
 // Description: Sends a signal to a job running in background
 // Parameters: int signal_num - Number of signal to send
 // Parameters: int job_num - The number of the job in the job list
+// Parameters: job_node *jobs - A pointer to the jobs linked list
 // Returns: void
 //**************************************************************************************
-void kill_job(int signal_num,int job_num){
-	job_node *curr_node = jobs;
+void kill_job(int signal_num,int job_num, job_node **jobs){
+	job_node *curr_node = *jobs;
 
 	for(int i = 1; i < job_num; i++){
 		if(curr_node == NULL)
@@ -316,18 +323,16 @@ void kill_job(int signal_num,int job_num){
 //********************************************
 // function name: ExeCmd
 // Description: interprets and executes built-in commands
-// Parameters: pointer to jobs, command string
+// Parameters: pointer to jobs, command string, pointer to previous directory
 // Returns: 0 - success,1 - failure
 //**************************************************************************************
-int ExeCmd(job_node* jobs, char* lineSize, char* cmdString)
+int ExeCmd(job_node **jobs, char* lineSize, char* cmdString, char previous_dir[MAX_LINE_SIZE + 1])
 {
 	char* cmd; 
 	char* args[MAX_ARG];
-	char pwd[MAX_LINE_SIZE];
 	char* delimiters = " \t\n";  
 	int i = 0, num_arg = 0;
-	bool illegal_cmd = FALSE; // illegal command
-    	cmd = strtok(lineSize, delimiters);
+	cmd = strtok(lineSize, delimiters);
 	if (cmd == NULL)
 		return 0; 
    	args[0] = cmd;
@@ -419,7 +424,7 @@ int ExeCmd(job_node* jobs, char* lineSize, char* cmdString)
 
 		char curr_dir[MAX_LINE_SIZE + 1];
 
-		if(getcwd(curr_dir,MAX_LINE_SIZE) == -1){
+		if(getcwd(curr_dir,MAX_LINE_SIZE) == NULL){
 			perror("getcwd:");
 			return -1;
 		}
@@ -434,7 +439,7 @@ int ExeCmd(job_node* jobs, char* lineSize, char* cmdString)
 			goto error;
 		}
 
- 		print_jobs();
+ 		print_jobs(jobs);
 	}
 	/*************************************************/
 	else if (!strcmp(cmd, "showpid")) 
@@ -449,7 +454,7 @@ int ExeCmd(job_node* jobs, char* lineSize, char* cmdString)
 	/*************************************************/
 	else if (!strcmp(cmd, "history"))
 	{
-//
+
 			int i;
 			for (i= history_start-1; i >=0 ; i--)
 			{
@@ -469,7 +474,7 @@ int ExeCmd(job_node* jobs, char* lineSize, char* cmdString)
 	else if (!strcmp(cmd, "fg")) 
 	{
 		int job_num = 0;
-		job_node *curr_node = jobs;
+		job_node *curr_node = *jobs;
 		if(curr_node == NULL){
 			return 0;
 		}
@@ -484,7 +489,7 @@ int ExeCmd(job_node* jobs, char* lineSize, char* cmdString)
 			}
 		}
 
-		fg_command(job_num);
+		fg_command(job_num,jobs);
 
 	} 
 	/*************************************************/
@@ -502,7 +507,7 @@ int ExeCmd(job_node* jobs, char* lineSize, char* cmdString)
 			}
 		}
 
-		bg_command(job_num);
+		bg_command(job_num,jobs);
 	}
 	/*************************************************/
 	else if (!strcmp(cmd, "kill"))
@@ -518,7 +523,7 @@ int ExeCmd(job_node* jobs, char* lineSize, char* cmdString)
 
 		int job_num = atoi(args[2]);
 
-		kill_job(signal_num,job_num);
+		kill_job(signal_num,job_num,jobs);
 	}
 	/*************************************************/
 	else if (!strcmp(cmd, "mv"))
@@ -544,15 +549,15 @@ int ExeCmd(job_node* jobs, char* lineSize, char* cmdString)
 			goto error;
 
    		if(num_arg == 1){
-		    quit_with_kill();
+		    quit_with_kill(jobs);
 	    } else{
-		    quit_without_kill();
+		    quit_without_kill(jobs);
 	    }
 	} 
 	/*************************************************/
 	else // external command
 	{
- 		ExeExternal(args, cmdString,FALSE);
+ 		ExeExternal(args, cmdString,FALSE,jobs);
 	 	return 0;
 	}
     return 0;
@@ -564,10 +569,10 @@ int ExeCmd(job_node* jobs, char* lineSize, char* cmdString)
 //**************************************************************************************
 // function name: ExeExternal
 // Description: executes external command
-// Parameters: external command arguments, external command string
+// Parameters: pointer to jobs, external command arguments, external command string
 // Returns: void
 //**************************************************************************************
-void ExeExternal(char *args[MAX_ARG], char* cmdString,bool background)
+void ExeExternal(char *args[MAX_ARG], char* cmdString,bool background, job_node **jobs)
 {
 	int pID;
 	int pid_res = 0;
@@ -588,7 +593,7 @@ void ExeExternal(char *args[MAX_ARG], char* cmdString,bool background)
 		default:
 			if(background){
 				if(waitpid(pID,&status,WNOHANG) == 0)
-					add_to_jobs(pID, cmdString,FALSE);
+					add_to_jobs(pID, cmdString,FALSE,jobs);
 			}
 			else {
 				fg_pid = pID;
@@ -598,7 +603,7 @@ void ExeExternal(char *args[MAX_ARG], char* cmdString,bool background)
 					break;
 				}
 				if(WIFSTOPPED(status)) {
-					add_to_jobs(pID, cmdString, TRUE);
+					add_to_jobs(pID, cmdString, TRUE,jobs);
 				}
 				if(WIFSIGNALED(status)){
 				}
@@ -648,7 +653,7 @@ int BgCmd(char* lineSize, void* jobs, char *cmdString)
 
 		}
 
-		ExeExternal(args, cmdString,TRUE);
+		ExeExternal(args, cmdString,TRUE,jobs);
 		return 0;
 		
 	}

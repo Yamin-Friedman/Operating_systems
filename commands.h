@@ -24,11 +24,7 @@ typedef struct job_node {
 
 } job_node;
 
-extern job_node *jobs;
 
-//extern char history[50][MAX_LINE_SIZE];
-//extern char *history_start_ptr = history;
-//extern char *hisory_end_ptr = history;
 extern char previous_dir[MAX_LINE_SIZE + 1];
 
 //**************************************************************************************
@@ -39,19 +35,15 @@ extern char previous_dir[MAX_LINE_SIZE + 1];
 //**************************************************************************************
 int ExeComp(char* lineSize);
 int BgCmd(char* lineSize, void* jobs, char *cmdString);
-int ExeCmd(job_node* jobs, char* lineSize, char* cmdString);
+int ExeCmd(job_node** jobs, char* lineSize, char* cmdString, char previous_dir[MAX_LINE_SIZE + 1]);
 
 //**************************************************************************************
 // function name: ExeExternal
 // Description: executes external command
-// Parameters: external command arguments, external command string
+// Parameters: pointer to jobs, external command arguments, external command string
 // Returns: void
 //**************************************************************************************
-void ExeExternal(char *args[MAX_ARG], char* cmdString,bool background);
-char *lastLocation;
-//char history[50][MAX_LINE_SIZE];
-//char *history_start_ptr = history;
-//char *history_end_ptr = history;
-//int historyModuloFlag = 0;
+void ExeExternal(char *args[MAX_ARG], char* cmdString,bool background, job_node **jobs);
+
 #endif
 
