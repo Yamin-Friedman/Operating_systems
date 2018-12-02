@@ -14,41 +14,67 @@ int historyModuloFlag = 0;
 // Parameters: job_node *jobs - A pointer to the jobs linked list
 // Returns: exits the program successfully
 //**************************************************************************************
-void quit_with_kill(job_node **jobs){
+void update_history(char* cmd)
+{
+
+	strcpy(history[history_start], cmd);
+	if (history_start == 49)// if array is full, go back to the start of array
+	{
+		history_start = 0;// move to start of array
+		history_end = history_start + 1;
+		historyModuloFlag = 1;
+	}
+
+	else
+	{
+		if (historyModuloFlag)// now end need to move
+		{
+			if (history_start == 48)
+				history_end = 0;
+			else history_end++;
+		}
+
+		history_start++;
+	}
+	//history[history_start] = cmd;
+
+
+}
+void quit_with_kill(job_node **jobs) {
 	job_node *curr_node = *jobs;
 	job_node *next_node = NULL;
 	int job_num = 0;
 	int status;
 	int res;
 
-	while(curr_node != NULL){
+	while (curr_node != NULL) {
 		job_num++;
-		printf("[%d] %s %d - Sending SIGTERM... ",job_num,curr_node->program,curr_node->pid);
-		res = kill(curr_node->pid,SIGTERM);
-		if(res == -1){
+		printf("[%d] %s %d - Sending SIGTERM... ", job_num, curr_node->program, curr_node->pid);
+		res = kill(curr_node->pid, SIGTERM);
+		if (res == -1) {
 			perror("kill:");
 		}
 
-		res = waitpid(curr_node->pid,&status,WUNTRACED|WNOHANG);
-		if(res == -1){
+		res = waitpid(curr_node->pid, &status, WUNTRACED | WNOHANG);
+		if (res == -1) {
 			perror("waitpid:");
 			break;
 		}
 
-		if(WIFSIGNALED(status)){
+		if (WIFSIGNALED(status)) {
 			printf("Done.\n");
 		}
-		else{
+		else {
 
 			sleep(5);
 
-			res = waitpid(curr_node->pid,&status,WUNTRACED|WNOHANG);
-			if(res == -1){
+			res = waitpid(curr_node->pid, &status, WUNTRACED | WNOHANG);
+			if (res == -1) {
 				perror("waitpid:");
 				break;
 			}
 
-			if(WIFSIGNALED(status)){
+			if (WIFSIGNALED(status)) {
 				printf("Done.\n");
 			}
 			else {
@@ -76,12 +102,12 @@ void quit_with_kill(job_node **jobs){
 // Parameters: job_node **jobs - A pointer to the jobs linked list
 // Returns: exits the program successfully
 //**************************************************************************************
-void quit_without_kill(job_node **jobs){
+void quit_without_kill(job_node **jobs) {
 	// needs to erase all dynamic memory
 	job_node *curr_node = *jobs;
 	job_node *next_node;
 
-	while(curr_node != NULL){
+	while (curr_node != NULL) {
 		next_node = curr_node->next;
 		free(curr_node);
 		curr_node = next_node;
@@ -99,17 +125,17 @@ void quit_without_kill(job_node **jobs){
 // Parameters: job_node **jobs - A pointer to the jobs linked list
 // Returns: bool of success or failure
 //**************************************************************************************
-bool remove_job(int pid, job_node **jobs){
+bool remove_job(int pid, job_node **jobs) {
 	job_node *curr_node = *jobs;
 	job_node *next_node;
-	if(curr_node != NULL && curr_node->pid == pid){
+	if (curr_node != NULL && curr_node->pid == pid) {
 		*jobs = curr_node->next;
 		free(curr_node);
 		return TRUE;
 	}
-	while(curr_node != NULL){
+	while (curr_node != NULL) {
 		next_node = curr_node->next;
-		if(next_node != NULL && next_node->pid == pid){
+		if (next_node != NULL && next_node->pid == pid) {
 			curr_node->next = next_node->next;
 			free(next_node);
 			return TRUE;
@@ -128,11 +154,11 @@ bool remove_job(int pid, job_node **jobs){
 // Parameters: job_node **jobs - A pointer to the jobs linked list
 // Returns: void
 //**************************************************************************************
-void add_to_jobs(int pID, char *cmdstring, bool stopped, job_node **jobs){
+void add_to_jobs(int pID, char *cmdstring, bool stopped, job_node **jobs) {
 	struct timespec curr_time;
 	job_node *curr_node = *jobs;
 	job_node *new_job_node = (job_node*)malloc(sizeof(job_node));
-	if(new_job_node == NULL){
+	if (new_job_node == NULL) {
 		printf("malloc error\n");
 		exit(-1);
 	}
@@ -140,21 +166,21 @@ void add_to_jobs(int pID, char *cmdstring, bool stopped, job_node **jobs){
 	new_job_node->stopped = stopped;
 	new_job_node->pid = pID;
 	new_job_node->next = NULL;
-	strcpy(new_job_node->program,cmdstring);
+	strcpy(new_job_node->program, cmdstring);
 
-	while(curr_node != NULL){
-		if(curr_node->next == NULL){
+	while (curr_node != NULL) {
+		if (curr_node->next == NULL) {
 			break;
 		}
 		curr_node = curr_node->next;
 	}
-	if(curr_node == NULL){
+	if (curr_node == NULL) {
 		*jobs = new_job_node;
 	}
 	else {
 		curr_node->next = new_job_node;
 	}
-	if(clock_gettime(CLOCK_REALTIME,&curr_time) == -1){
+	if (clock_gettime(CLOCK_REALTIME, &curr_time) == -1) {
 		perror("gettime:");
 		return;
 	}
@@ -173,28 +199,28 @@ void fg_command(int job_num, job_node **jobs) {
 	int status;
 	job_node *curr_node = *jobs;
 
-	while(curr_node->next != NULL){
+	while (curr_node->next != NULL) {
 		curr_job_num++;
-		if(job_num && curr_job_num  == job_num){
+		if (job_num && curr_job_num == job_num) {
 			break;
 		}
 
 		curr_node = curr_node->next;
 	}
 
-	if(curr_node->stopped){
+	if (curr_node->stopped) {
 		curr_node->stopped = FALSE;
-		send_signal(SIGCONT,curr_node->pid);
+		send_signal(SIGCONT, curr_node->pid);
 	}
 
 	fg_pid = curr_node->pid;
-	waitpid(curr_node->pid,&status,WUNTRACED);
+	waitpid(curr_node->pid, &status, WUNTRACED);
 	fg_pid = 0;
-	if(WIFSTOPPED(status)) {
+	if (WIFSTOPPED(status)) {
 		curr_node->stopped = TRUE;
 	}
-	if(WIFSIGNALED(status)){
-		remove_job(curr_node->pid,jobs);
+	if (WIFSIGNALED(status)) {
+		remove_job(curr_node->pid, jobs);
 	}
 }
 
@@ -205,44 +231,44 @@ void fg_command(int job_num, job_node **jobs) {
 // Parameters: job_node **jobs - A pointer to the jobs linked list
 // Returns: void
 //**************************************************************************************
-void bg_command(int job_num, job_node **jobs){
+void bg_command(int job_num, job_node **jobs) {
 	int curr_job_num = 0;
 	job_node *curr_node = *jobs;
 	job_node *last_stopped = NULL;
-	if(curr_node == NULL){
+	if (curr_node == NULL) {
 		return;
 	}
 
-	while(curr_node != NULL){
+	while (curr_node != NULL) {
 		curr_job_num++;
-		if(curr_node->stopped){
+		if (curr_node->stopped) {
 			last_stopped = curr_node;
 		}
-		if(job_num && curr_job_num  == job_num){
+		if (job_num && curr_job_num == job_num) {
 			break;
 		}
 
-		if(curr_node->next == NULL)
+		if (curr_node->next == NULL)
 			break;
 
 		curr_node = curr_node->next;
 	}
 
-	if(!job_num){
+	if (!job_num) {
 		curr_node = last_stopped;
-		if(last_stopped == NULL){
+		if (last_stopped == NULL) {
 			return;
 		}
 	}
-	else{
-		if(!curr_node->stopped){
+	else {
+		if (!curr_node->stopped) {
 			return;
 		}
 	}
 
 	curr_node->stopped = FALSE;
-	printf("%s\n",curr_node->program);
-	send_signal(SIGCONT,curr_node->pid);
+	printf("%s\n", curr_node->program);
+	send_signal(SIGCONT, curr_node->pid);
 }
 
 //**************************************************************************************
@@ -251,28 +277,29 @@ void bg_command(int job_num, job_node **jobs){
 // Parameters: job_node **jobs - A pointer to the jobs linked list
 // Returns: void
 //**************************************************************************************
-void print_jobs(job_node **jobs){
+void print_jobs(job_node **jobs) {
 	int job_num = 1;
 	int status;
 	bool first = TRUE;
 	int res;
 	struct timespec curr_time;
-	if(clock_gettime(CLOCK_REALTIME,&curr_time) == -1){
+	if (clock_gettime(CLOCK_REALTIME, &curr_time) == -1) {
 		perror("gettime:");
 		return;
 	}
 	job_node *curr_node = *jobs;
 	job_node *next_node;
 	job_node *prev_node = *jobs;
-	while(curr_node != NULL){
+	while (curr_node != NULL) {
 
-		res = waitpid(curr_node->pid,&status,WNOHANG);
+		res = waitpid(curr_node->pid, &status, WNOHANG);
 
-		if(res && (WIFEXITED(status) || WIFSIGNALED(status))){
+		if (res && (WIFEXITED(status) || WIFSIGNALED(status))) {
 			next_node = curr_node->next;
-			if(first == TRUE){
+			if (first == TRUE) {
 				*jobs = next_node;
-			}else{
+			}
+			else {
 				prev_node->next = next_node;
 			}
 			free(curr_node);
@@ -281,10 +308,10 @@ void print_jobs(job_node **jobs){
 		}
 
 		time_t time = curr_time.tv_sec - curr_node->start_time;
-		if(curr_node->stopped)
-			printf("[%d] %s : %d %d secs (Stopped)\n",job_num,curr_node->program,curr_node->pid,(int)time);
+		if (curr_node->stopped)
+			printf("[%d] %s : %d %d secs (Stopped)\n", job_num, curr_node->program, curr_node->pid, (int)time);
 		else
-			printf("[%d] %s : %d %d secs\n",job_num,curr_node->program,curr_node->pid,(int)time);
+			printf("[%d] %s : %d %d secs\n", job_num, curr_node->program, curr_node->pid, (int)time);
 		job_num++;
 		first = FALSE;
 		prev_node = curr_node;
@@ -300,24 +327,25 @@ void print_jobs(job_node **jobs){
 // Parameters: job_node **jobs - A pointer to the jobs linked list
 // Returns: void
 //**************************************************************************************
-void kill_job(int signal_num,int job_num, job_node **jobs){
+void kill_job(int signal_num, int job_num, job_node **jobs) {
 	job_node *curr_node = *jobs;
 
-	for(int i = 1; i < job_num; i++){
-		if(curr_node == NULL)
+	for (int i = 1; i < job_num; i++) {
+		if (curr_node == NULL)
 			break;
 		curr_node = curr_node->next;
 	}
 
-	if(curr_node == NULL){
-		printf("smash error: > kill %d – job does not exist\n",job_num);
+	if (curr_node == NULL) {
+		printf("smash error: > kill %d – job does not exist\n", job_num);
 		return;
 	}
 
-	if(kill(curr_node->pid,signal_num) == -1){
-		printf("smash error: > kill %d – cannot send signal\n",job_num);
-	}else{
-		printf("smash > signal %d was sent to pid %d\n",signal_num,curr_node->pid);
+	if (kill(curr_node->pid, signal_num) == -1) {
+		printf("smash error: > kill %d – cannot send signal\n", job_num);
+	}
+	else {
+		printf("smash > signal %d was sent to pid %d\n", signal_num, curr_node->pid);
 	}
 }
 
@@ -332,82 +360,64 @@ void kill_job(int signal_num,int job_num, job_node **jobs){
 //**************************************************************************************
 int ExeCmd(job_node **jobs, char* lineSize, char* cmdString, char previous_dir[MAX_LINE_SIZE + 1])
 {
-	char* cmd; 
+	char* cmd;
 	char* args[MAX_ARG];
-	char* delimiters = " \t\n";  
+	char* delimiters = " \t\n";
 	int i = 0, num_arg = 0;
 	cmd = strtok(lineSize, delimiters);
 	if (cmd == NULL)
-		return 0; 
-   	args[0] = cmd;
-	for (i=1; i<MAX_ARG; i++)
+		return 0;
+	args[0] = cmd;
+	for (i = 1; i < MAX_ARG; i++)
 	{
-		args[i] = strtok(NULL, delimiters); 
-		if (args[i] != NULL) 
-			num_arg++; 
-		
- 
-	}
-	if (history_start ==  49)// if array is full, go back to the start of array
-	{
-		history_start = 0;// move to start of array
-		history_end = history_start + 1;
-		historyModuloFlag = 1;
-	}
+		args[i] = strtok(NULL, delimiters);
+		if (args[i] != NULL)
+			num_arg++;
 
-	else
-	{
-		if (historyModuloFlag)// now end need to move
-		{
-			if (history_start == 48)
-				history_end = 0;
-			else history_end++;
-		}
 
-		history_start++;
 	}
-	//history[history_start] = cmd;
-	strcpy(history[history_start], cmd );
-	
-/*************************************************/
-// Built in Commands PLEASE NOTE NOT ALL REQUIRED
-// ARE IN THIS CHAIN OF IF COMMANDS. PLEASE ADD
-// MORE IF STATEMENTS AS REQUIRED
-/*************************************************/
-	if (!strcmp(cmd, "cd") ) 
+	update_history(cmd);
+	/*************************************************/
+	// Built in Commands PLEASE NOTE NOT ALL REQUIRED
+	// ARE IN THIS CHAIN OF IF COMMANDS. PLEASE ADD
+	// MORE IF STATEMENTS AS REQUIRED
+	/*************************************************/
+	if (!strcmp(cmd, "cd"))
 	{
-		if(num_arg != 1) {
+		if (num_arg != 1) {
 			goto error;
 		}
 
 		char *curr_dir = malloc(MAX_LINE_SIZE + 1);
-		if(curr_dir == NULL){
+		if (curr_dir == NULL) {
 			printf("Malloc error\n");
 			return 1;
 		}
-		curr_dir = getcwd(curr_dir,MAX_LINE_SIZE);
-		if(curr_dir == NULL){
+		curr_dir = getcwd(curr_dir, MAX_LINE_SIZE);
+		if (curr_dir == NULL) {
 			perror("getcwd:");
 			free(curr_dir);
 			return 1;
 		}
 
-		if(*args[1] == '-'){
-			if(previous_dir == NULL) {
+		if (*args[1] == '-') {
+			if (previous_dir == NULL) {
 				free(curr_dir);
 				return 0;
 			}
 
-			if(chdir(previous_dir) == -1){
+			if (chdir(previous_dir) == -1) {
 				perror("chdir:");
 				free(curr_dir);
 				return 1;
 			}
-		} else{
-			if(chdir(args[1]) == -1){
-				if(errno == ENOENT){
-					printf("smash error: > “%s” - path not found\n",args[1]);
-				}else {
+		}
+		else {
+			if (chdir(args[1]) == -1) {
+				if (errno == ENOENT) {
+					printf("smash error: > “%s” - path not found\n", args[1]);
+				}
+				else {
 					perror("chdir:");
 				}
 				free(curr_dir);
@@ -415,158 +425,161 @@ int ExeCmd(job_node **jobs, char* lineSize, char* cmdString, char previous_dir[M
 			}
 		}
 
-		strcpy(previous_dir,curr_dir);
+		strcpy(previous_dir, curr_dir);
 		free(curr_dir);
-	} 
-	
+	}
+
 	/*************************************************/
-	else if (!strcmp(cmd, "pwd")) 
+	else if (!strcmp(cmd, "pwd"))
 	{
-		if(num_arg > 0){
+		if (num_arg > 0) {
 			goto error;
 		}
 
 		char curr_dir[MAX_LINE_SIZE + 1];
 
-		if(getcwd(curr_dir,MAX_LINE_SIZE) == NULL){
+		if (getcwd(curr_dir, MAX_LINE_SIZE) == NULL) {
 			perror("getcwd:");
 			return -1;
 		}
 
-		printf("%s\n",curr_dir);
+		printf("%s\n", curr_dir);
 	}
 	/*************************************************/
-	
-	else if (!strcmp(cmd, "jobs")) 
+
+	else if (!strcmp(cmd, "jobs"))
 	{
-		if(num_arg > 0){
+		if (num_arg > 0) {
 			goto error;
 		}
 
- 		print_jobs(jobs);
+		print_jobs(jobs);
 	}
 	/*************************************************/
-	else if (!strcmp(cmd, "showpid")) 
+	else if (!strcmp(cmd, "showpid"))
 	{
-		if(num_arg > 0){
+		if (num_arg > 0) {
 			goto error;
 		}
 
 		int pid = getpid();
-		printf("smash pid is %d\n",pid);
+		printf("smash pid is %d\n", pid);
 	}
 	/*************************************************/
 	else if (!strcmp(cmd, "history"))
 	{
 
-			int i;
-			for (i= history_start-1; i >=0 ; i--)
+		int i;
+		if (historyModuloFlag)
+		{
+			for (i = history_end - 1; i < 50; i++)
 			{
 				printf("%s\n", history[i]);
 			}
 
-			if (historyModuloFlag)
-			{
-				for (i = 49; i >= history_end; i--)
-				{
-					printf("%s\n", history[i]);
-				}
-			}
+		}
+		for (i = 0; i < history_start ; i++)
+		{
+			printf("%s\n", history[i]);
+		}
+
 
 	}
-		/*************************************************/
-	else if (!strcmp(cmd, "fg")) 
+	/*************************************************/
+	else if (!strcmp(cmd, "fg"))
 	{
 		int job_num = 0;
 		job_node *curr_node = *jobs;
-		if(curr_node == NULL){
+		if (curr_node == NULL) {
 			return 0;
 		}
 
-		if(num_arg > 1){
+		if (num_arg > 1) {
 			goto error;
 		}
-		else if( num_arg == 1) {
-			job_num = strtol(args[1],NULL,10);
-			if(!job_num){
+		else if (num_arg == 1) {
+			job_num = strtol(args[1], NULL, 10);
+			if (!job_num) {
 				goto error;
 			}
 		}
 
-		fg_command(job_num,jobs);
+		fg_command(job_num, jobs);
 
-	} 
+	}
 	/*************************************************/
-	else if (!strcmp(cmd, "bg")) 
+	else if (!strcmp(cmd, "bg"))
 	{
 		int job_num = 0;
 
-		if(num_arg > 1){
+		if (num_arg > 1) {
 			goto error;
 		}
-		else if( num_arg == 1) {
-			job_num = strtol(args[1],NULL,10);
-			if(!job_num){
+		else if (num_arg == 1) {
+			job_num = strtol(args[1], NULL, 10);
+			if (!job_num) {
 				goto error;
 			}
 		}
 
-		bg_command(job_num,jobs);
+		bg_command(job_num, jobs);
 	}
 	/*************************************************/
 	else if (!strcmp(cmd, "kill"))
 	{
-		if(num_arg != 2 || *args[1] != '-'){
+		if (num_arg != 2 || *args[1] != '-') {
 			goto error;
 		}
 
 		int signal_num = atoi(args[1] + 1);
-		if(signal_num == 0){
+		if (signal_num == 0) {
 			goto error;
 		}
 
 		int job_num = atoi(args[2]);
 
-		kill_job(signal_num,job_num,jobs);
+		kill_job(signal_num, job_num, jobs);
 	}
 	/*************************************************/
 	else if (!strcmp(cmd, "mv"))
-		{
-		if(num_arg != 2){
+	{
+		if (num_arg != 2) {
 			goto error;
 		}
 
-		if(rename(args[1],args[2]) == -1){
+		if (rename(args[1], args[2]) == -1) {
 			perror("rename:");
 			return 1;
-		} else{
-			printf("%s has been renamed to %s\n",args[1],args[2]);
+		}
+		else {
+			printf("%s has been renamed to %s\n", args[1], args[2]);
 		}
 	}
 	/*************************************************/
 	else if (!strcmp(cmd, "quit"))
 	{
-		if(num_arg > 1){
+		if (num_arg > 1) {
 			goto error;
 		}
-		if(num_arg == 1 && strcmp(args[1],"kill") != 0)
+		if (num_arg == 1 && strcmp(args[1], "kill") != 0)
 			goto error;
 
-   		if(num_arg == 1){
-		    quit_with_kill(jobs);
-	    } else{
-		    quit_without_kill(jobs);
-	    }
-	} 
+		if (num_arg == 1) {
+			quit_with_kill(jobs);
+		}
+		else {
+			quit_without_kill(jobs);
+		}
+	}
 	/*************************************************/
 	else // external command
 	{
- 		ExeExternal(args, cmdString,FALSE,jobs);
-	 	return 0;
+		ExeExternal(args, cmdString, FALSE, jobs);
+		return 0;
 	}
-    return 0;
+	return 0;
 
-	error:
+error:
 	printf("smash error: > \"%s\"\n", cmdString);
 	return 1;
 }
@@ -579,43 +592,43 @@ int ExeCmd(job_node **jobs, char* lineSize, char* cmdString, char previous_dir[M
 // Parameters: job_node **jobs - Pointer to the jobs linked list
 // Returns: void
 //**************************************************************************************
-void ExeExternal(char *args[MAX_ARG], char* cmdString,bool background, job_node **jobs)
+void ExeExternal(char *args[MAX_ARG], char* cmdString, bool background, job_node **jobs)
 {
 	int pID;
 	int pid_res = 0;
 	int status;
-	switch(pID = fork())
+	switch (pID = fork())
 	{
-		case -1:
-			perror("fork:");
-			break;
-		case 0 :
-                	// Child Process
-			setpgrp();
-			status = execvp(args[0],args);
-			if(status == -1){
-				perror("execv:");
-				exit(-1);
+	case -1:
+		perror("fork:");
+		break;
+	case 0:
+		// Child Process
+		setpgrp();
+		status = execvp(args[0], args);
+		if (status == -1) {
+			perror("execv:");
+			exit(-1);
+		}
+	default:
+		if (background) {
+			if (waitpid(pID, &status, WNOHANG) == 0)
+				add_to_jobs(pID, cmdString, FALSE, jobs);
+		}
+		else {
+			fg_pid = pID;
+			pid_res = waitpid(pID, &status, WUNTRACED);
+			if (pid_res == -1) {
+				perror("waitpid:");
+				break;
 			}
-		default:
-			if(background){
-				if(waitpid(pID,&status,WNOHANG) == 0)
-					add_to_jobs(pID, cmdString,FALSE,jobs);
+			if (WIFSTOPPED(status)) {
+				add_to_jobs(pID, cmdString, TRUE, jobs);
 			}
-			else {
-				fg_pid = pID;
-				pid_res = waitpid(pID,&status,WUNTRACED);
-				if(pid_res == -1){
-					perror("waitpid:");
-					break;
-				}
-				if(WIFSTOPPED(status)) {
-					add_to_jobs(pID, cmdString, TRUE,jobs);
-				}
-				if(WIFSIGNALED(status)){
-				}
-				fg_pid = 0;
+			if (WIFSIGNALED(status)) {
 			}
+			fg_pid = 0;
+		}
 	}
 }
 //**************************************************************************************
@@ -626,10 +639,10 @@ void ExeExternal(char *args[MAX_ARG], char* cmdString,bool background, job_node 
 //**************************************************************************************
 int ExeComp(char* lineSize)
 {
-    if ((strstr(lineSize, "|")) || (strstr(lineSize, "<")) || (strstr(lineSize, ">")) || (strstr(lineSize, "*")) || (strstr(lineSize, "?")) || (strstr(lineSize, ">>")) || (strstr(lineSize, "|&")))
-    {
+	if ((strstr(lineSize, "|")) || (strstr(lineSize, "<")) || (strstr(lineSize, ">")) || (strstr(lineSize, "*")) || (strstr(lineSize, "?")) || (strstr(lineSize, ">>")) || (strstr(lineSize, "|&")))
+	{
 		return 0;
-	} 
+	}
 	return -1;
 }
 //**************************************************************************************
@@ -648,24 +661,25 @@ int BgCmd(char* lineSize, job_node **jobs, char *cmdString)
 	char* delimiters = " \t\n";
 	char *args[MAX_ARG];
 	int i = 0, num_arg = 0;
-	if (lineSize[strlen(lineSize)-2] == '&')
+	if (lineSize[strlen(lineSize) - 2] == '&')
 	{
-		lineSize[strlen(lineSize)-2] = '\0';
+		lineSize[strlen(lineSize) - 2] = '\0';
 		cmd = strtok(lineSize, delimiters);
+		
 		if (cmd == NULL)
 			return 0;
 		args[0] = cmd;
-		for (i=1; i<MAX_ARG; i++)
+		for (i = 1; i < MAX_ARG; i++)
 		{
 			args[i] = strtok(NULL, delimiters);
 			if (args[i] != NULL)
 				num_arg++;
 
 		}
-
-		ExeExternal(args, cmdString,TRUE,jobs);
+		update_history(cmd);
+		ExeExternal(args, cmdString, TRUE, jobs);
 		return 0;
-		
+
 	}
 	return -1;
 }
